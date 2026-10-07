@@ -1,8 +1,9 @@
 import type L from 'leaflet'
+import { useEffect } from 'react'
 import { Pane, Polygon, Popup, useMap } from 'react-leaflet'
 import { effectiveCategory, placesWithOutline, type PlaceCategory } from '../data/campus'
 import { useScheduleData } from '../schedule/ScheduleContext'
-import { registerPlaceLayer } from './layerRegistry'
+import { getPlaceLayer, registerPlaceLayer } from './layerRegistry'
 import { PlacePopup } from './PlacePopup'
 
 /** Above the map image (250), below the default overlay pane (400) where the route line lives. */
@@ -18,8 +19,7 @@ const CATEGORY_COLORS: Record<PlaceCategory, string> = {
 
 // The art already draws and labels every building, so this layer is a category tint and a
 // click target, not a second outline. Full weight is saved for hover and the open popup.
-const baseStyle = (color: string, live = false): L.PathOptions => ({
-  className: live ? 'place-live' : undefined,
+const baseStyle = (color: string): L.PathOptions => ({
   color,
   weight: 1.5,
   opacity: 0.55,
@@ -29,8 +29,8 @@ const baseStyle = (color: string, live = false): L.PathOptions => ({
   lineCap: 'butt',
 })
 
-const activeStyle = (color: string, live = false): L.PathOptions => ({
-  ...baseStyle(color, live),
+const activeStyle = (color: string): L.PathOptions => ({
+  ...baseStyle(color),
   weight: 3,
   opacity: 1,
   fillOpacity: 0.38,
@@ -60,34 +60,43 @@ interface Props {
 export function PlaceLayer({ interactive, hidden, onRouteTo }: Props) {
   const map = useMap()
   const { eventVenueIds, liveVenueIds } = useScheduleData()
+
+  // Leaflet reads className only when it creates a path and setStyle never updates it, so
+  // toggle the class on the element directly. Remounting would close an open popup. Runs
+  // after children mount, and again when polygons remount (interactive) or reappear (hidden).
+  useEffect(() => {
+    for (const place of placesWithOutline) {
+      const path = getPlaceLayer(place.id) as L.Polygon | undefined
+      path?.getElement()?.classList.toggle('place-live', liveVenueIds.has(place.id))
+    }
+  }, [liveVenueIds, interactive, hidden, eventVenueIds])
   return (
     <Pane name={PLACES_PANE} style={{ zIndex: 350 }}>
       {placesWithOutline.filter((p) => !hidden.has(effectiveCategory(p, eventVenueIds))).map((place) => {
         const color = CATEGORY_COLORS[effectiveCategory(place, eventVenueIds)]
-        const live = liveVenueIds.has(place.id)
         return (
           <Polygon
             ref={(polygon) => registerPlaceLayer(place.id, polygon)}
             // `interactive` is only read when Leaflet creates the path, so remount on change.
             key={`${place.id}-${interactive}`}
             positions={place.polygon!}
-            pathOptions={baseStyle(color, live)}
+            pathOptions={baseStyle(color)}
             interactive={interactive}
             eventHandlers={{
               mouseover: (e) => {
-                if (canHover) pathOf(e).setStyle(activeStyle(color, live))
+                if (canHover) pathOf(e).setStyle(activeStyle(color))
               },
               mouseout: (e) => {
                 const path = pathOf(e)
-                if (canHover && !path.isPopupOpen()) path.setStyle(baseStyle(color, live))
+                if (canHover && !path.isPopupOpen()) path.setStyle(baseStyle(color))
               },
               popupopen: (e) => {
-                pathOf(e).setStyle(activeStyle(color, live))
+                pathOf(e).setStyle(activeStyle(color))
                 // Read at open time so it follows rotation/resizes. react-leaflet re-runs the
                 // popup layout after rendering its content, which picks this value up.
                 e.popup.options.maxHeight = popupMaxHeight(map)
               },
-              popupclose: (e) => pathOf(e).setStyle(baseStyle(color, live)),
+              popupclose: (e) => pathOf(e).setStyle(baseStyle(color)),
             }}
           >
             {interactive && (
