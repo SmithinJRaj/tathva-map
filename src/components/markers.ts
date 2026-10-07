@@ -7,12 +7,12 @@ import type { PlaceCategory } from '../data/campus'
 const cache = new Map<string, L.DivIcon>()
 
 /** A small square chip in the place's category colour. */
-export function placeIcon(category: PlaceCategory): L.DivIcon {
-  const key = `place:${category}`
+export function placeIcon(category: PlaceCategory, live = false): L.DivIcon {
+  const key = `place:${category}:${live}`
   let icon = cache.get(key)
   if (!icon) {
     icon = L.divIcon({
-      className: '',
+      className: live ? 'place-live' : '',
       html: `<div class="pin pin-${category}"></div>`,
       iconSize: [14, 14],
       iconAnchor: [7, 7],

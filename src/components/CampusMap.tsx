@@ -10,10 +10,12 @@ import {
   MAX_BOUNDS_PAD,
   MAX_ZOOM,
 } from '../config/mapConfig'
-import { placesById, placesWithoutOutline, type PlaceCategory } from '../data/campus'
+import { effectiveCategory, placesById, placesWithoutOutline, type PlaceCategory } from '../data/campus'
 import { useRouting } from '../hooks/useRouting'
 import type { RouteResult } from '../lib/astar'
 import type { TravelMode } from '../lib/graph'
+import { useScheduleData } from '../schedule/ScheduleContext'
+import { registerPlaceLayer } from './layerRegistry'
 import { endpointIcon, placeIcon } from './markers'
 import { PlaceLayer } from './PlaceLayer'
 import { PlacePopup } from './PlacePopup'
@@ -128,6 +130,7 @@ export function CampusMap({
   onZoomControls,
 }: Props) {
   const [tracing, setTracing] = useState(false)
+  const { eventVenueIds, liveVenueIds } = useScheduleData()
 
   return (
     <MapContainer
@@ -156,9 +159,14 @@ export function CampusMap({
 
       {/* A polygon already shows where a place is, so only pin the ones mapped as a point. */}
       {placesWithoutOutline
-        .filter((place) => !hidden.has(place.category))
+        .filter((place) => !hidden.has(effectiveCategory(place, eventVenueIds)))
         .map((place) => (
-          <Marker key={place.id} position={place.position} icon={placeIcon(place.category)}>
+          <Marker
+            key={place.id}
+            ref={(marker) => registerPlaceLayer(place.id, marker)}
+            position={place.position}
+            icon={placeIcon(effectiveCategory(place, eventVenueIds), liveVenueIds.has(place.id))}
+          >
             <Popup pane="popupPane" className="retro-popup" maxWidth={260} minWidth={200}>
               <PlacePopup place={place} onRouteTo={onRouteTo} />
             </Popup>

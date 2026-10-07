@@ -395,3 +395,34 @@
 .leaflet-marker-icon {
   transition: none;
 }
+
+/* --- Live venues ------------------------------------------------------------------------ */
+
+/* Paths take the glow as an SVG filter; divIcon markers carry the class on their wrapper. */
+.place-live {
+  filter: drop-shadow(0 0 5px rgb(167 139 250 / 0.9)) drop-shadow(0 0 12px rgb(167 139 250 / 0.55));
+}
+
+/* Used when a venue is located from the schedule (three pulses). */
+@keyframes place-pulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 4px var(--violet));
+  }
+  50% {
+    filter: drop-shadow(0 0 18px var(--magenta)) drop-shadow(0 0 28px var(--violet));
+  }
+}
+
+.place-pulse {
+  animation: place-pulse 0.6s ease-in-out 3;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .place-pulse {
+    animation: none;
+  }
+  .place-live {
+    filter: none;
+  }
+}

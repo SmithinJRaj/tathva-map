@@ -1,5 +1,6 @@
-import { createContext, useContext, useMemo, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode } from 'react'
 import { eventState } from '../../shared/classify.ts'
+import { knownPlaces } from '../../shared/places.ts'
 import type { ScheduleEvent } from '../../shared/schedule.ts'
 import { useNow } from './useNow.ts'
 import { useSchedule } from './useSchedule.ts'
@@ -19,6 +20,16 @@ const ScheduleContext = createContext<ScheduleData | null>(null)
 export function ScheduleProvider({ children }: { children: ReactNode }) {
   const { events, fetchedAt, stale } = useSchedule()
   const now = useNow()
+  const warned = useRef(new Set<string>())
+  // A venue the map does not know can never be shown; say so once per id (spec §8).
+  useEffect(() => {
+    if (!import.meta.env.DEV) return
+    for (const e of events) {
+      if (knownPlaces.has(e.placeId) || warned.current.has(e.placeId)) continue
+      warned.current.add(e.placeId)
+      console.warn(`schedule: event "${e.title}" uses unknown placeId "${e.placeId}"`)
+    }
+  }, [events])
   const value = useMemo<ScheduleData>(() => {
     const byPlace = new Map<string, ScheduleEvent[]>()
     const liveVenueIds = new Set<string>()
