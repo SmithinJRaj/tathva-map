@@ -21,10 +21,12 @@ export interface AppOptions {
   cookieSecret: string
   cookieSecure: boolean
   logger?: boolean
+  /** Passed to Fastify; set when behind a reverse proxy so req.ip is the real client. */
+  trustProxy?: boolean | string | ((address: string, hop: number) => boolean)
 }
 
 export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
-  const app = Fastify({ logger: opts.logger ?? false })
+  const app = Fastify({ logger: opts.logger ?? false, trustProxy: opts.trustProxy ?? false })
   const store = createStore(opts.db)
 
   await app.register(cookie, { secret: opts.cookieSecret })

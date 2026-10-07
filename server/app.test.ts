@@ -222,3 +222,29 @@ test('the 11th login attempt within the window is rate limited', async () => {
   for (let i = 0; i < 10; i++) expect((await login(app, 'nope')).statusCode).toBe(401)
   expect((await login(app, 'nope')).statusCode).toBe(429)
 })
+
+async function floodFrom(a: FastifyInstance, ip: string, n: number) {
+  const codes: number[] = []
+  for (let i = 0; i < n; i++) {
+    const res = await a.inject({
+      method: 'POST',
+      url: '/api/admin/login',
+      headers: { 'x-forwarded-for': ip },
+      payload: { username: 'asha', password: 'nope' },
+    })
+    codes.push(res.statusCode)
+  }
+  return codes
+}
+
+test('with trustProxy, each X-Forwarded-For client gets its own rate-limit bucket', async () => {
+  const db = openDb(':memory:')
+  const proxied = await buildApp({ db, cookieSecret: 'x'.repeat(32), cookieSecure: false, trustProxy: (_addr, hop) => hop < 1 })
+  expect((await floodFrom(proxied, '10.0.0.1', 11)).at(-1)).toBe(429)
+  expect((await floodFrom(proxied, '10.0.0.2', 1))[0]).toBe(401)
+})
+
+test('without trustProxy, X-Forwarded-For is ignored by the rate limiter', async () => {
+  expect((await floodFrom(app, '10.0.0.1', 10)).at(-1)).toBe(401)
+  expect((await floodFrom(app, '10.0.0.2', 1))[0]).toBe(429)
+})

@@ -12,11 +12,18 @@ if (!secret || secret.length < 32) {
   process.exit(1)
 }
 
+// TRUST_PROXY: unset -> off; '1'/'true' -> trust exactly one hop (the connecting proxy);
+// otherwise an IP/CIDR list. Fastify treats a numeric trustProxy as "trust nothing", so
+// the one-hop case is spelled as a function.
+const rawTrust = process.env.TRUST_PROXY?.trim()
+const trustProxy = !rawTrust ? false : rawTrust === '1' || rawTrust === 'true' ? (_addr: string, hop: number) => hop < 1 : rawTrust
+
 const app = await buildApp({
   db: openDb(dbPath),
   cookieSecret: secret,
   cookieSecure: process.env.COOKIE_SECURE !== 'false',
   logger: true,
+  trustProxy,
 })
 
 await app.listen({
