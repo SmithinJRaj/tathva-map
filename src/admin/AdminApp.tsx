@@ -15,7 +15,7 @@ export default function AdminApp() {
   // Lives here, not in the form, so a 401 mid-edit keeps the inputs through re-login.
   const [view, setView] = useState<View>({ page: 'list' })
   const toList = () => setView({ page: 'list' })
-  const unauthorized = () => setSession({ phase: 'login' })
+  const unauthorized = useCallback(() => setSession({ phase: 'login' }), [])
   const trackDraft = useCallback(
     (draft: EventDraft) => setView((cur) => (cur.page === 'form' ? { ...cur, draft } : cur)),
     [],

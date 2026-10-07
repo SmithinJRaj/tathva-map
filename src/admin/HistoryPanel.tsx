@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { formatIstDay, formatIstTime, istDateKey } from '../../shared/ist.ts'
 import { knownPlaces } from '../../shared/places.ts'
 import type { ScheduleEvent } from '../../shared/schedule.ts'
@@ -42,6 +42,11 @@ function when(iso: string): string {
 export function HistoryPanel({ eventId, onUnauthorized }: Props) {
   const [entries, setEntries] = useState<AuditEntry[] | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // A ref, so a re-created callback from the parent doesn't refetch the history.
+  const unauthorized = useRef(onUnauthorized)
+  useEffect(() => {
+    unauthorized.current = onUnauthorized
+  })
 
   useEffect(() => {
     let live = true
@@ -50,13 +55,13 @@ export function HistoryPanel({ eventId, onUnauthorized }: Props) {
       .then((list) => live && setEntries([...list].sort((a, b) => Date.parse(b.at) - Date.parse(a.at))))
       .catch((err) => {
         if (!live) return
-        if (err instanceof ApiError && err.status === 401) onUnauthorized?.()
+        if (err instanceof ApiError && err.status === 401) unauthorized.current?.()
         else setError("Couldn't load history")
       })
     return () => {
       live = false
     }
-  }, [eventId, onUnauthorized])
+  }, [eventId])
 
   if (error) return <p className="term admin-error" role="alert">{error}</p>
   if (!entries) return <p className="term admin-note">Loading…</p>
