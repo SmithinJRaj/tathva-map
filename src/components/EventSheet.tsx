@@ -1,0 +1,170 @@
+import { useEffect, useMemo, useState, type PointerEvent } from 'react'
+import { classify } from '../../shared/classify.ts'
+import { istDateKey } from '../../shared/ist.ts'
+import { MAP_ATTRIBUTION } from '../config/mapConfig'
+import { placesById } from '../data/campus'
+import { dayLabel } from '../schedule/festDays'
+import { useScheduleData } from '../schedule/ScheduleContext'
+import { EventRow } from './EventRow'
+import { nearestSnap, SHEET_PEEK_PX, sheetHeight, type SheetSnap } from './sheetSnap'
+
+interface Props {
+  onLocate: (placeId: string) => void
+}
+
+type Tab = 'live' | 'upcoming'
+
+/** Pointer movement under this many pixels counts as a tap on the handle, not a drag. */
+const TAP_SLOP_PX = 4
+
+export function EventSheet({ onLocate }: Props) {
+  const { events, now, stale, fetchedAt } = useScheduleData()
+  const [snap, setSnap] = useState<SheetSnap>('peek')
+  const [tab, setTab] = useState<Tab>('live')
+  const [viewport, setViewport] = useState(() => window.innerHeight)
+  const [drag, setDrag] = useState<{ startY: number; startHeight: number; height: number } | null>(
+    null,
+  )
+
+  useEffect(() => {
+    const onResize = () => setViewport(window.innerHeight)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
+  const { live, upcomingByDay } = useMemo(() => classify(events, now), [events, now])
+  const upcomingCount = upcomingByDay.reduce((n, day) => n + day.events.length, 0)
+  const todayKey = istDateKey(now)
+
+  const height = drag ? drag.height : sheetHeight(snap, viewport)
+
+  const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
+    e.currentTarget.setPointerCapture(e.pointerId)
+    setDrag({ startY: e.clientY, startHeight: height, height })
+  }
+
+  const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
+    if (!drag) return
+    const raw = drag.startHeight + (drag.startY - e.clientY)
+    const next = Math.min(sheetHeight('full', viewport), Math.max(SHEET_PEEK_PX, raw))
+    setDrag({ ...drag, height: next })
+  }
+
+  const onPointerUp = (e: PointerEvent<HTMLDivElement>) => {
+    if (!drag) return
+    if (Math.abs(drag.startY - e.clientY) < TAP_SLOP_PX) {
+      setSnap(snap === 'peek' ? 'half' : 'peek')
+    } else {
+      setSnap(nearestSnap(drag.height, viewport))
+    }
+    setDrag(null)
+  }
+
+  const select = (placeId: string) => {
+    if (!placesById.has(placeId)) return
+    setSnap('peek')
+    onLocate(placeId)
+  }
+
+  const offline =
+    stale && fetchedAt !== null
+      ? ` · Offline · updated ${Math.max(0, Math.round((now.getTime() - fetchedAt) / 60_000))} min ago`
+      : ''
+
+  return (
+    <section
+      className="event-sheet slab"
+      style={{ height }}
+      data-dragging={drag ? 'true' : undefined}
+      aria-label="Live and upcoming events"
+    >
+      <div
+        className="sheet-handle"
+        role="button"
+        tabIndex={0}
+        aria-expanded={snap !== 'peek'}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={() => setDrag(null)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            setSnap(snap === 'peek' ? 'half' : 'peek')
+          }
+        }}
+      >
+        <span className="sheet-grip" aria-hidden />
+        <p className="pix-sm sheet-summary">
+          <span style={{ color: 'var(--red)' }}>●</span> {live.length} LIVE · {upcomingCount} UP NEXT
+          {offline}
+        </p>
+        <a
+          href="https://www.openstreetmap.org/copyright"
+          target="_blank"
+          rel="noreferrer"
+          className="pix-sm sheet-attribution"
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          {MAP_ATTRIBUTION}
+        </a>
+      </div>
+
+      <div className="sheet-body">
+        <div className="seg">
+          <button
+            type="button"
+            className="seg-item"
+            aria-pressed={tab === 'live'}
+            onClick={() => setTab('live')}
+          >
+            Live
+          </button>
+          <button
+            type="button"
+            className="seg-item"
+            aria-pressed={tab === 'upcoming'}
+            onClick={() => setTab('upcoming')}
+          >
+            Up next
+          </button>
+        </div>
+
+        {tab === 'live' &&
+          (live.length === 0 ? (
+            <p className="pix-sm sheet-empty">Nothing live right now.</p>
+          ) : (
+            live.map((event) => (
+              <EventRow
+                key={event.id}
+                event={event}
+                now={now}
+                showVenue
+                onSelect={() => select(event.placeId)}
+              />
+            ))
+          ))}
+
+        {tab === 'upcoming' &&
+          (upcomingByDay.length === 0 ? (
+            <p className="pix-sm sheet-empty">Nothing else scheduled.</p>
+          ) : (
+            upcomingByDay.map((day) => (
+              <div key={day.dateKey}>
+                <h3 className="pix-sm sheet-day">{dayLabel(day.dateKey, todayKey)}</h3>
+                {day.events.map((event) => (
+                  <EventRow
+                    key={event.id}
+                    event={event}
+                    now={now}
+                    showVenue
+                    onSelect={() => select(event.placeId)}
+                  />
+                ))}
+              </div>
+            ))
+          ))}
+      </div>
+    </section>
+  )
+}

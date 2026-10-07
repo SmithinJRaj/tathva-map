@@ -426,3 +426,74 @@
     filter: none;
   }
 }
+
+/* --- Live / Up next sheet -------------------------------------------------------------- */
+
+.event-sheet {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  max-width: 28rem;
+  margin-inline: auto;
+  transition: height 180ms steps(4);
+}
+
+.event-sheet[data-dragging='true'] {
+  transition: none;
+}
+
+.sheet-handle {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  height: 56px;
+  padding: 5px 10px 2px;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+
+.sheet-grip {
+  width: 36px;
+  height: 4px;
+  background: var(--violet);
+}
+
+.sheet-summary {
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.sheet-attribution {
+  color: var(--muted);
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.sheet-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 6px 10px 12px;
+}
+
+.sheet-empty {
+  margin-top: 12px;
+  color: var(--muted);
+}
+
+.sheet-day {
+  margin: 12px 0 4px;
+  color: var(--amber);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .event-sheet {
+    transition: none;
+  }
+}

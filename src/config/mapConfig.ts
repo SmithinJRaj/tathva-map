@@ -102,3 +102,6 @@ export function imagePointOf(latlng: { lat: number; lng: number }): [number, num
 export function imageShape(points: readonly (readonly [number, number])[]): LatLngTuple[] {
   return points.map(([x, y]) => imagePoint(x, y))
 }
+
+/** How the map moves to a venue picked from the schedule: animated flight or instant jump. */
+export const MAP_MOVE: 'fly' | 'jump' = 'fly'

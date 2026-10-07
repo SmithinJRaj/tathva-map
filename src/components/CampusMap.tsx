@@ -7,6 +7,7 @@ import {
   MAP_BOUNDS,
   MAP_IMAGE_PIXELATED,
   MAP_IMAGE_URL,
+  MAP_MOVE,
   MAX_BOUNDS_PAD,
   MAX_ZOOM,
 } from '../config/mapConfig'
@@ -15,9 +16,10 @@ import { useRouting } from '../hooks/useRouting'
 import type { RouteResult } from '../lib/astar'
 import type { TravelMode } from '../lib/graph'
 import { useScheduleData } from '../schedule/ScheduleContext'
-import { registerPlaceLayer } from './layerRegistry'
+import { getPlaceLayer, registerPlaceLayer } from './layerRegistry'
 import { endpointIcon, placeIcon } from './markers'
 import { PlaceLayer } from './PlaceLayer'
+import { SHEET_PEEK_PX } from './sheetSnap'
 import { PlacePopup } from './PlacePopup'
 
 const MAX_PAN_BOUNDS = L.latLngBounds(MAP_BOUNDS).pad(MAX_BOUNDS_PAD)
@@ -33,19 +35,46 @@ interface Props {
   goalId: string | null
   mode: TravelMode
   hidden: ReadonlySet<PlaceCategory>
-  /** Bumped on every calibration so re-scanning the same QR still re-centres the map. */
-  flyToken: number
+  /** A new token (even for the same place) re-centres the map, so re-scanning a QR still works. */
+  focus: { placeId: string; token: number; openPopup: boolean } | null
   onRoute: (route: RouteResult | null) => void
   onRouteTo: (placeId: string) => void
   onZoomControls: (controls: { zoomIn: () => void; zoomOut: () => void } | null) => void
 }
 
-function FlyToPlace({ placeId, token }: { placeId: string | null; token: number }) {
+/** Moves to a place, then optionally opens its popup, and pulses its shape for a moment. */
+function FocusPlace({ focus }: Pick<Props, 'focus'>) {
   const map = useMap()
   useEffect(() => {
-    const place = placeId ? placesById.get(placeId) : undefined
-    if (place) map.flyTo(place.position, 18, { duration: 1.2 })
-  }, [map, placeId, token])
+    const place = focus ? placesById.get(focus.placeId) : undefined
+    if (!focus || !place) return
+    let timer: number | undefined
+    let pulsed: HTMLElement | undefined
+
+    const arrive = () => {
+      const layer = getPlaceLayer(focus.placeId) as L.Marker | L.Polygon | undefined
+      if (!layer) return
+      if (focus.openPopup) layer.openPopup()
+      const el = layer.getElement() as HTMLElement | undefined
+      if (!el) return
+      el.classList.add('place-pulse')
+      pulsed = el
+      timer = window.setTimeout(() => el.classList.remove('place-pulse'), 1800)
+    }
+
+    if (MAP_MOVE === 'fly') {
+      map.once('moveend', arrive)
+      map.flyTo(place.position, 18, { duration: 1.2 })
+    } else {
+      map.setView(place.position, 18)
+      arrive()
+    }
+    return () => {
+      map.off('moveend', arrive)
+      window.clearTimeout(timer)
+      pulsed?.classList.remove('place-pulse')
+    }
+  }, [map, focus])
   return null
 }
 
@@ -124,7 +153,7 @@ export function CampusMap({
   goalId,
   mode,
   hidden,
-  flyToken,
+  focus,
   onRoute,
   onRouteTo,
   onZoomControls,
@@ -167,7 +196,14 @@ export function CampusMap({
             position={place.position}
             icon={placeIcon(effectiveCategory(place, eventVenueIds), liveVenueIds.has(place.id))}
           >
-            <Popup pane="popupPane" className="retro-popup" maxWidth={260} minWidth={200}>
+            <Popup
+              pane="popupPane"
+              className="retro-popup"
+              maxWidth={260}
+              minWidth={200}
+              autoPanPaddingTopLeft={[16, 170]}
+              autoPanPaddingBottomRight={[16, 16 + SHEET_PEEK_PX]}
+            >
               <PlacePopup place={place} onRouteTo={onRouteTo} />
             </Popup>
           </Marker>
@@ -177,7 +213,7 @@ export function CampusMap({
       <FitMinZoom />
       <ZoomBridge onZoomControls={onZoomControls} />
       <RelaxBoundsWhilePopupOpen />
-      <FlyToPlace placeId={startId} token={flyToken} />
+      <FocusPlace focus={focus} />
       <RouteLayer startId={startId} goalId={goalId} mode={mode} onRoute={onRoute} />
       {PolygonTool && (
         <Suspense fallback={null}>

@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useMemo, useState } from 'react'
 import { CampusMap } from './components/CampusMap'
+import { EventSheet } from './components/EventSheet'
 import { Legend } from './components/Legend'
-import { MAP_ATTRIBUTION } from './config/mapConfig'
 import { placesById, routablePlaces, type PlaceCategory } from './data/campus'
 import { minutesFor } from './hooks/useRouting'
 import type { RouteResult } from './lib/astar'
@@ -23,6 +23,8 @@ const CATEGORY_LABELS: Record<PlaceCategory, string> = {
 
 const CATEGORY_ORDER: PlaceCategory[] = ['event', 'academic', 'food', 'amenity', 'other']
 
+type FocusTarget = { placeId: string; token: number; openPopup: boolean }
+
 type ZoomControls = { zoomIn: () => void; zoomOut: () => void } | null
 
 function App() {
@@ -30,7 +32,9 @@ function App() {
   const [goalId, setGoalId] = useState<string | null>(null)
   const [mode, setMode] = useState<TravelMode>('walk')
   const [hidden, setHidden] = useState<ReadonlySet<PlaceCategory>>(() => new Set())
-  const [flyToken, setFlyToken] = useState(0)
+  const [focus, setFocus] = useState<FocusTarget | null>(() =>
+    startId ? { placeId: startId, token: 0, openPopup: false } : null,
+  )
   const [route, setRoute] = useState<RouteResult | null>(null)
   const [zoom, setZoom] = useState<ZoomControls>(null)
   const [scanning, setScanning] = useState(false)
@@ -49,9 +53,13 @@ function App() {
       return
     }
     setStartId(id)
-    setFlyToken((t) => t + 1)
+    setFocus((f) => ({ placeId: id, token: (f?.token ?? 0) + 1, openPopup: false }))
     writeStartNodeToUrl(id)
     showToast(`You are at ${placesById.get(id)!.name}`)
+  }, [])
+
+  const handleLocate = useCallback((placeId: string) => {
+    setFocus((f) => ({ placeId, token: (f?.token ?? 0) + 1, openPopup: true }))
   }, [])
 
   const handleRouteTo = useCallback((placeId: string) => {
@@ -81,7 +89,7 @@ function App() {
         goalId={goalId}
         mode={mode}
         hidden={hidden}
-        flyToken={flyToken}
+        focus={focus}
         onRoute={setRoute}
         onRouteTo={handleRouteTo}
         onZoomControls={setZoom}
@@ -163,7 +171,10 @@ function App() {
       />
 
       {/* --- Zoom + scan -------------------------------------------------------------- */}
-      <div className="absolute right-3 bottom-5 z-[1000] flex flex-col items-end gap-2">
+      <div
+        className="absolute right-3 z-[1000] flex flex-col items-end gap-2"
+        style={{ bottom: 'calc(56px + 20px)' }}
+      >
         {zoom && (
           <div className="flex flex-col">
             <button type="button" className="btn px-3" onClick={zoom.zoomIn} aria-label="Zoom in">
@@ -187,21 +198,12 @@ function App() {
         </button>
       </div>
 
-      {/* Required by the ODbL licence on the map data. */}
-      <a
-        href="https://www.openstreetmap.org/copyright"
-        target="_blank"
-        rel="noreferrer"
-        className="pix-sm absolute bottom-0.5 left-1/2 z-[1000] -translate-x-1/2 px-1 whitespace-nowrap"
-        style={{ color: 'var(--muted)', textTransform: 'none' }}
-      >
-        {MAP_ATTRIBUTION}
-      </a>
+      <EventSheet onLocate={handleLocate} />
 
       {toast && (
         <div
-          className="toast slab pix-sm absolute bottom-24 left-1/2 z-[1000] px-3 py-2"
-          style={{ color: 'var(--ink)' }}
+          className="toast slab pix-sm absolute left-1/2 z-[1000] px-3 py-2"
+          style={{ color: 'var(--ink)', bottom: 'calc(56px + 96px)' }}
         >
           {toast}
         </div>

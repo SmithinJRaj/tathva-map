@@ -26,7 +26,10 @@ export function Legend({ order, labels, hidden, onToggle }: Props) {
   const activeFilters = hidden.size
 
   return (
-    <div className="absolute bottom-5 left-3 z-[1000] flex flex-col items-start gap-1.5">
+    <div
+      className="absolute left-3 z-[1000] flex flex-col items-start gap-1.5"
+      style={{ bottom: 'calc(56px + 20px)' }}
+    >
       {open && (
         <div className="slab flex flex-col items-start gap-1 p-1.5">
           {order.map((category) => {
