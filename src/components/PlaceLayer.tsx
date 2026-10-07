@@ -77,13 +77,19 @@ export function PlaceLayer({ interactive, hidden, onRouteTo }: Props) {
         const color = CATEGORY_COLORS[effectiveCategory(place, eventVenueIds)]
         return (
           <Polygon
-            ref={(polygon) => registerPlaceLayer(place.id, polygon)}
+            ref={(polygon) => {
+              registerPlaceLayer(place.id, polygon)
+              // The effect above can run before the pane has mounted any polygon.
+              polygon?.getElement()?.classList.toggle('place-live', liveVenueIds.has(place.id))
+            }}
             // `interactive` is only read when Leaflet creates the path, so remount on change.
             key={`${place.id}-${interactive}`}
             positions={place.polygon!}
             pathOptions={baseStyle(color)}
             interactive={interactive}
             eventHandlers={{
+              add: (e) =>
+                pathOf(e).getElement()?.classList.toggle('place-live', liveVenueIds.has(place.id)),
               mouseover: (e) => {
                 if (canHover) pathOf(e).setStyle(activeStyle(color))
               },
