@@ -1,0 +1,15 @@
+{
+ "art": "real_map.jpeg",
+ "image": {
+  "width": 2560,
+  "height": 1810
+ },
+ "bounds": {
+  "south": 11.318629809306968,
+  "west": 75.93059060538192,
+  "north": 11.324723132640957,
+  "east": 75.93937982056715
+ },
+ "metresPerPixel": 0.3748,
+ "overlap": 0.5373
+}

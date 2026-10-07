@@ -1,0 +1,397 @@
+/* The app's 8-bit chrome: palette, type and the handful of slabs everything is built from.
+   Popups extend this in retro-popup.css; map pins in markers.ts read the same palette. */
+
+:root {
+  /* Deep space violet. The basemap is tinted to the same ramp by the build script, so the
+     chrome and the map read as one surface instead of two pasted together. */
+  --void: #0b0718;
+  --panel: #251a46;
+  --panel-hi: #342657;
+  --ink: #ece7ff;
+  --muted: #9a8cc9;
+
+  --violet: #a78bfa;
+  --violet-deep: #7c3aed;
+  --magenta: #e879f9;
+  --cyan: #67e8f9;
+  --amber: #fbbf24;
+  --green: #4ade80;
+  --red: #fb7185;
+
+  /* Categories: still five clearly separable hues, now all at home in the violet night. */
+  --cat-academic: #7dd3fc;
+  --cat-food: #fb923c;
+  --cat-event: #fbbf24;
+  --cat-amenity: #4ade80;
+  --cat-other: #c4b5fd;
+
+  --pixel: 'Press Start 2P', monospace;
+  --terminal: 'VT323', monospace;
+
+  /* Hard offset shadow: no blur in the chrome itself, that is the 8-bit half of the look. */
+  --drop: 4px 4px 0 rgb(0 0 0 / 0.7);
+  --drop-sm: 2px 2px 0 rgb(0 0 0 / 0.7);
+  /* Glow is the space half, and is reserved for things that should look lit. */
+  --glow: 0 0 14px rgb(167 139 250 / 0.55);
+}
+
+/* --- Starfield ------------------------------------------------------------------------- */
+
+/*
+ * Two nebula washes over a tiled star pattern. The stars are single-pixel radial gradients
+ * repeated by background-size, which costs one paint and no DOM; the layers use different
+ * tile sizes so the repeat never becomes a visible grid.
+ */
+.space-bg {
+  background-color: #07040f;
+  background-image:
+    radial-gradient(2px 2px at 24px 18px, rgb(255 255 255 / 1), transparent 100%),
+    radial-gradient(1.5px 1.5px at 108px 74px, rgb(214 200 255 / 0.95), transparent 100%),
+    radial-gradient(1.5px 1.5px at 61px 143px, rgb(255 255 255 / 0.8), transparent 100%),
+    radial-gradient(2px 2px at 158px 36px, rgb(200 226 255 / 0.85), transparent 100%),
+    radial-gradient(1.5px 1.5px at 12px 96px, rgb(255 255 255 / 0.7), transparent 100%),
+    radial-gradient(1px 1px at 196px 168px, rgb(236 231 255 / 0.6), transparent 100%),
+    radial-gradient(70% 55% at 72% 18%, rgb(124 58 237 / 0.3), transparent 72%),
+    radial-gradient(60% 50% at 18% 82%, rgb(232 121 249 / 0.16), transparent 72%);
+  background-size:
+    190px 190px,
+    230px 230px,
+    170px 170px,
+    260px 260px,
+    145px 145px,
+    115px 115px,
+    cover,
+    cover;
+}
+
+/*
+ * Nebula haze laid over the map. The art fills the viewport at most zooms, so without this
+ * the starfield behind it is never seen and the map reads as merely dark rather than as
+ * space. Kept faint: the last layer is a vignette, and anything stronger costs legibility.
+ */
+.space-haze {
+  background-image:
+    radial-gradient(58% 44% at 80% 10%, rgb(167 139 250 / 0.2), transparent 70%),
+    radial-gradient(52% 44% at 10% 90%, rgb(232 121 249 / 0.14), transparent 70%),
+    radial-gradient(120% 92% at 50% 50%, transparent 60%, rgb(5 2 12 / 0.42) 100%);
+}
+
+/* --- Slabs ---------------------------------------------------------------------------- */
+
+.slab {
+  border: 3px solid var(--violet);
+  border-radius: 0;
+  /* Slightly translucent so the starfield and the map glow through the chrome. */
+  background: rgb(11 7 24 / 0.92);
+  box-shadow: var(--drop), 0 0 20px rgb(124 58 237 / 0.35);
+}
+
+/* A label in pixel type. Press Start 2P is very wide, so it only ever gets small sizes. */
+.pix {
+  font-family: var(--pixel);
+  font-size: 9px;
+  line-height: 1.6;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.pix-sm {
+  font-family: var(--pixel);
+  font-size: 7px;
+  line-height: 1.7;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* Readable pixel type for anything with real words in it. */
+.term {
+  font-family: var(--terminal);
+  font-size: 19px;
+  line-height: 1.15;
+}
+
+/* --- Buttons -------------------------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border: 2px solid var(--void);
+  border-radius: 0;
+  background: var(--violet);
+  color: var(--void);
+  box-shadow: var(--drop-sm);
+  font-family: var(--pixel);
+  font-size: 8px;
+  line-height: 1.6;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 80ms steps(2);
+}
+
+.btn:hover {
+  background: var(--ink);
+  box-shadow: var(--drop-sm), var(--glow);
+}
+
+.btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.btn-primary {
+  padding: 11px 16px;
+  border-color: var(--void);
+  background: var(--magenta);
+  color: var(--void);
+  box-shadow: var(--drop), 0 0 18px rgb(232 121 249 / 0.5);
+  font-size: 10px;
+}
+
+.btn-primary:hover {
+  background: var(--violet);
+}
+
+.btn-ghost {
+  border-color: var(--muted);
+  background: transparent;
+  color: var(--muted);
+  box-shadow: none;
+}
+
+.btn-ghost:hover {
+  border-color: var(--ink);
+  background: transparent;
+  color: var(--ink);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn:disabled:active {
+  transform: none;
+  box-shadow: var(--drop-sm);
+}
+
+/* --- Segmented control (Walk / Drive) -------------------------------------------------- */
+
+.seg {
+  display: inline-flex;
+  border: 2px solid var(--violet);
+  background: var(--void);
+}
+
+.seg-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 11px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--pixel);
+  font-size: 8px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.seg-item + .seg-item {
+  border-left: 2px solid var(--violet);
+}
+
+.seg-item[aria-pressed='true'] {
+  background: var(--violet);
+  color: var(--void);
+}
+
+.seg-item:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: -4px;
+}
+
+/* --- The From / To fields -------------------------------------------------------------- */
+
+.field {
+  display: flex;
+  align-items: stretch;
+  border: 2px solid var(--panel);
+  background: #130c28;
+}
+
+.field:focus-within {
+  border-color: var(--cyan);
+}
+
+.field-tag {
+  display: flex;
+  align-items: center;
+  min-width: 46px;
+  padding: 0 8px;
+  background: var(--panel);
+  color: var(--ink);
+}
+
+/* The native select keeps the picker (and its accessibility) but drops its chrome. */
+.field select {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--terminal);
+  font-size: 19px;
+  line-height: 1.15;
+  appearance: none;
+  cursor: pointer;
+}
+
+.field select:focus {
+  outline: none;
+}
+
+/* Options render in the OS popup, which ignores most styling - set what it does honour. */
+.field select option,
+.field select optgroup {
+  background: var(--void);
+  color: var(--ink);
+  font-family: var(--terminal);
+}
+
+.field-caret {
+  display: flex;
+  align-items: center;
+  padding-right: 8px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+/* --- Legend --------------------------------------------------------------------------- */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 7px;
+  border: 2px solid var(--void);
+  background: var(--void);
+  color: var(--muted);
+  font-family: var(--pixel);
+  font-size: 7px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.chip[aria-pressed='true'] {
+  color: var(--ink);
+}
+
+.chip[aria-pressed='false'] .chip-swatch {
+  background: transparent !important;
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 1px;
+}
+
+.chip-swatch {
+  width: 9px;
+  height: 9px;
+  border: 2px solid currentColor;
+}
+
+/* --- Map pins -------------------------------------------------------------------------- */
+
+/* Leaflet sizes the wrapper; the pin draws itself with a hard shadow and square edges. */
+.pin {
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--void);
+  background: var(--muted);
+  box-shadow: var(--drop-sm), 0 0 8px rgb(167 139 250 / 0.5);
+}
+
+.pin-academic { background: var(--cat-academic); }
+.pin-food { background: var(--cat-food); }
+.pin-event { background: var(--cat-event); }
+.pin-amenity { background: var(--cat-amenity); }
+.pin-other { background: var(--cat-other); }
+
+/* Start and goal: a labelled flag on a stem, so the label never covers the point itself. */
+.pin-flag {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 6px;
+  border: 2px solid var(--void);
+  background: var(--amber);
+  color: var(--void);
+  box-shadow: var(--drop-sm), var(--glow);
+  font-family: var(--pixel);
+  font-size: 8px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+/* The stem runs from the flag's bottom-left down to the anchor point. */
+.pin-flag::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 3px;
+  width: 3px;
+  height: 11px;
+  background: var(--void);
+}
+
+.pin-flag.is-start {
+  background: var(--green);
+}
+
+.pin-flag.is-goal {
+  background: var(--magenta);
+}
+
+/* --- Toast ----------------------------------------------------------------------------- */
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.toast {
+  animation: toast-in 140ms steps(3) both;
+}
+
+/* --- Leaflet overrides ------------------------------------------------------------------ */
+
+/* Custom zoom buttons live in the HUD, so Leaflet's own control is off; this covers the
+   attribution flag and anything else Leaflet injects with rounded corners. */
+.leaflet-container {
+  font-family: var(--terminal);
+}
+
+.leaflet-marker-icon {
+  transition: none;
+}

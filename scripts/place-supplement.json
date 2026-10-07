@@ -1,0 +1,568 @@
+{
+  "_comment": [
+    "Places the campus art labels but OpenStreetMap does not name. The footprints are in",
+    "OSM - which is why the art draws them - they simply carry no name tag, and the",
+    "pipeline skips anything unnamed.",
+    "",
+    "`at` is a point in art pixels, read off real_map.jpeg, that falls inside the shape.",
+    "The build script looks up whichever unnamed building or pitch contains that point and",
+    "adopts its real outline, so these get surveyed geometry rather than a hand-drawn box.",
+    "If no shape contains the point the entry still becomes a place, just without an outline,",
+    "and the build prints a warning.",
+    "",
+    "Re-read the points if the art is ever replaced."
+  ],
+  "places": [
+    {
+      "name": "C Hostel",
+      "category": "other",
+      "at": [
+        1860,
+        1312
+      ],
+      "outline": [
+        [
+          1905,
+          1294
+        ],
+        [
+          1914,
+          1294
+        ],
+        [
+          1915,
+          1299
+        ],
+        [
+          1928,
+          1429
+        ],
+        [
+          1897,
+          1432
+        ],
+        [
+          1890,
+          1383
+        ],
+        [
+          1820,
+          1390
+        ],
+        [
+          1813,
+          1392
+        ],
+        [
+          1817,
+          1410
+        ],
+        [
+          1853,
+          1407
+        ],
+        [
+          1857,
+          1445
+        ],
+        [
+          1784,
+          1453
+        ],
+        [
+          1780,
+          1413
+        ],
+        [
+          1804,
+          1409
+        ],
+        [
+          1800,
+          1392
+        ],
+        [
+          1720,
+          1400
+        ],
+        [
+          1725,
+          1460
+        ],
+        [
+          1690,
+          1465
+        ],
+        [
+          1680,
+          1371
+        ],
+        [
+          1686,
+          1368
+        ],
+        [
+          1686,
+          1355
+        ],
+        [
+          1690,
+          1353
+        ],
+        [
+          1686,
+          1313
+        ]
+      ],
+      "outlineSource": "traced from art (building)"
+    },
+    {
+      "name": "F Hostel",
+      "category": "other",
+      "at": [
+        1925,
+        1095
+      ],
+      "outline": [
+        [
+          2052,
+          1051
+        ],
+        [
+          2083,
+          1062
+        ],
+        [
+          2070,
+          1100
+        ],
+        [
+          2058,
+          1097
+        ],
+        [
+          2054,
+          1113
+        ],
+        [
+          2074,
+          1119
+        ],
+        [
+          2081,
+          1103
+        ],
+        [
+          2096,
+          1108
+        ],
+        [
+          2098,
+          1118
+        ],
+        [
+          2165,
+          1138
+        ],
+        [
+          2130,
+          1237
+        ],
+        [
+          2068,
+          1213
+        ],
+        [
+          2044,
+          1209
+        ],
+        [
+          2063,
+          1153
+        ],
+        [
+          2075,
+          1153
+        ],
+        [
+          2066,
+          1151
+        ],
+        [
+          2076,
+          1149
+        ],
+        [
+          2073,
+          1143
+        ],
+        [
+          2067,
+          1143
+        ],
+        [
+          2073,
+          1127
+        ],
+        [
+          2021,
+          1107
+        ],
+        [
+          1989,
+          1192
+        ],
+        [
+          1974,
+          1187
+        ],
+        [
+          1972,
+          1181
+        ],
+        [
+          1923,
+          1164
+        ],
+        [
+          1898,
+          1161
+        ],
+        [
+          1937,
+          1052
+        ],
+        [
+          1948,
+          1056
+        ],
+        [
+          1947,
+          1065
+        ],
+        [
+          1995,
+          1082
+        ],
+        [
+          2009,
+          1086
+        ],
+        [
+          2013,
+          1078
+        ],
+        [
+          2028,
+          1083
+        ],
+        [
+          2022,
+          1101
+        ],
+        [
+          2044,
+          1109
+        ],
+        [
+          2050,
+          1095
+        ],
+        [
+          2038,
+          1088
+        ]
+      ],
+      "outlineSource": "traced from art (building)"
+    },
+    {
+      "name": "G Hostel",
+      "category": "other",
+      "at": [
+        1950,
+        860
+      ],
+      "outline": [
+        [
+          1900,
+          797
+        ],
+        [
+          1928,
+          826
+        ],
+        [
+          1949,
+          808
+        ],
+        [
+          1976,
+          834
+        ],
+        [
+          1989,
+          825
+        ],
+        [
+          2020,
+          856
+        ],
+        [
+          1990,
+          887
+        ],
+        [
+          2034,
+          941
+        ],
+        [
+          2019,
+          953
+        ],
+        [
+          2009,
+          944
+        ],
+        [
+          1943,
+          960
+        ],
+        [
+          1953,
+          1011
+        ],
+        [
+          1945,
+          1014
+        ],
+        [
+          1946,
+          1021
+        ],
+        [
+          1877,
+          1037
+        ],
+        [
+          1874,
+          1029
+        ],
+        [
+          1856,
+          1031
+        ],
+        [
+          1848,
+          998
+        ],
+        [
+          1830,
+          1012
+        ],
+        [
+          1819,
+          1002
+        ],
+        [
+          1814,
+          994
+        ],
+        [
+          1834,
+          976
+        ],
+        [
+          1797,
+          964
+        ],
+        [
+          1789,
+          947
+        ],
+        [
+          1815,
+          866
+        ],
+        [
+          1830,
+          870
+        ],
+        [
+          1837,
+          877
+        ],
+        [
+          1871,
+          884
+        ],
+        [
+          1889,
+          823
+        ],
+        [
+          1884,
+          812
+        ]
+      ],
+      "outlineSource": "traced from art (building)"
+    },
+    {
+      "name": "Basketball Court",
+      "category": "event",
+      "at": [
+        813,
+        986
+      ]
+    },
+    {
+      "name": "Department of Chemical Engineering",
+      "category": "academic",
+      "at": [
+        2020,
+        330
+      ],
+      "outline": [
+        [
+          2144,
+          299
+        ],
+        [
+          2148,
+          299
+        ],
+        [
+          2189,
+          461
+        ],
+        [
+          2123,
+          472
+        ],
+        [
+          2108,
+          428
+        ],
+        [
+          2116,
+          425
+        ],
+        [
+          2105,
+          422
+        ],
+        [
+          2115,
+          419
+        ],
+        [
+          2105,
+          416
+        ],
+        [
+          2106,
+          413
+        ],
+        [
+          2116,
+          412
+        ],
+        [
+          2103,
+          410
+        ],
+        [
+          2102,
+          425
+        ],
+        [
+          2072,
+          432
+        ],
+        [
+          2074,
+          487
+        ],
+        [
+          2006,
+          495
+        ],
+        [
+          1994,
+          452
+        ],
+        [
+          1982,
+          455
+        ],
+        [
+          1965,
+          428
+        ],
+        [
+          1968,
+          405
+        ],
+        [
+          1980,
+          405
+        ],
+        [
+          1970,
+          384
+        ],
+        [
+          1968,
+          350
+        ],
+        [
+          2008,
+          344
+        ],
+        [
+          2009,
+          332
+        ],
+        [
+          2036,
+          327
+        ],
+        [
+          2058,
+          387
+        ],
+        [
+          2093,
+          378
+        ],
+        [
+          2080,
+          311
+        ]
+      ],
+      "outlineSource": "traced from art (building)"
+    }
+  ],
+  "renames": {
+    "Auditorium": "Chaitanya Auditorium",
+    "Hostel Office;NITC Hostel Main Office": "Hostels Office",
+    "TECHOLOGY BUSINESS INCUBATOR": "Technology Business Incubator",
+    "DEPARTMENT OF ARCHITECTURE AND PLANNNING": "Department of Architecture & Planning",
+    "SUMEDHYAM": "Sumedhyam Canteen",
+    "Swadhistam Canteen NITC": "Swadhishtam Canteen",
+    "nit football ground": "NITC Football Ground",
+    "Sampthrupthi Mini Canteen": "Samthrupthi Mini Canteen",
+    "SECRET SPOT": "Secret Spot",
+    "mini gym": "Mini Gym",
+    "mini park": "Mini Park",
+    "maitri": "Maitri",
+    "aryabhatta park": "Aryabhatta Park",
+    "97th Avenue Student Plaza": "97th Avenue",
+    "S.M LAB": "S.M Lab",
+    "T.E LAB": "T.E Lab",
+    "Concrete LAB": "Concrete Lab",
+    "Structural Engineering LAB": "Structural Engineering Lab",
+    "East Campus Lecture Hall Complex (ECLHC)": "ECLHC",
+    "Center for Career Development": "Centre for Career Development",
+    "NIT ground": "Volleyball Court"
+  }
+}

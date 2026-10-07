@@ -1,0 +1,208 @@
+/* 8-bit popup skin for building popups. Scoped to .retro-popup so node marker popups keep Leaflet's default look. */
+
+.retro-popup {
+  --retro-panel: var(--void);
+  --retro-ink: var(--ink);
+  --retro-muted: var(--muted);
+  --retro-accent: var(--violet);
+  --retro-shadow: #000;
+}
+
+.retro-popup .leaflet-popup-content-wrapper {
+  padding: 0;
+  border: 4px solid var(--violet);
+  border-radius: 0;
+  background: var(--retro-panel);
+  color: var(--retro-ink);
+  box-shadow: 6px 6px 0 var(--retro-shadow), 0 0 22px rgb(124 58 237 / 0.4);
+}
+
+.retro-popup .leaflet-popup-content {
+  margin: 12px 14px;
+  font-family: 'VT323', monospace;
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+/* Leaflet draws the tip as a rotated square; keep it square-edged and shadowless. */
+.retro-popup .leaflet-popup-tip {
+  border-radius: 0;
+  background: var(--violet);
+  box-shadow: none;
+}
+
+/* Hangs off the corner so it never covers the title or the scrollbar. */
+.retro-popup a.leaflet-popup-close-button {
+  top: -14px;
+  right: -14px;
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--violet);
+  background: var(--red);
+  color: var(--retro-ink);
+  font: 16px/20px 'Press Start 2P', monospace;
+  box-shadow: 2px 2px 0 var(--retro-shadow);
+}
+
+.retro-popup a.leaflet-popup-close-button:hover,
+.retro-popup a.leaflet-popup-close-button:focus-visible {
+  background: var(--magenta);
+  color: var(--void);
+}
+
+.retro-popup a.leaflet-popup-close-button:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+/* Leaflet adds .leaflet-popup-scrolled (overflow: auto) once content exceeds maxHeight.
+   Square, thin, flat scrollbar. WebKit/Blink use the pseudo-elements; Firefox the standard props. */
+.retro-popup .leaflet-popup-scrolled {
+  overscroll-behavior: contain;
+}
+
+.retro-popup .leaflet-popup-scrolled::-webkit-scrollbar {
+  width: 8px;
+}
+
+.retro-popup .leaflet-popup-scrolled::-webkit-scrollbar-track {
+  background: var(--retro-panel);
+  border-left: 2px solid var(--retro-muted);
+}
+
+.retro-popup .leaflet-popup-scrolled::-webkit-scrollbar-thumb {
+  background: var(--retro-accent);
+  border-radius: 0;
+}
+
+.retro-popup .leaflet-popup-scrolled::-webkit-scrollbar-button {
+  display: none;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  .retro-popup .leaflet-popup-scrolled {
+    scrollbar-width: thin;
+    scrollbar-color: var(--retro-accent) var(--retro-panel);
+  }
+}
+
+/* Title + badge stay pinned while the rest of the popup scrolls underneath. Leaflet only
+   makes the content a scroll container once it overflows maxHeight, and that is the only
+   time sticky is well defined here: unscoped, it resolves against an ancestor scrollport
+   and drops the header to the bottom of the popup. */
+.leaflet-popup-scrolled .retro-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.retro-head {
+  padding-bottom: 6px;
+  background: var(--retro-panel);
+}
+
+.retro-popup-body h2,
+.retro-popup-body h3,
+.retro-popup-body p,
+.retro-popup-body ul {
+  margin: 0;
+}
+
+.retro-title {
+  /* Press Start 2P is very wide: keep it small and clear of the corner close button. */
+  padding-right: 12px;
+  font: 12px/1.5 'Press Start 2P', monospace;
+  color: var(--retro-accent);
+  overflow-wrap: anywhere;
+}
+
+.retro-badge {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 6px;
+  border: 2px solid var(--retro-panel);
+  background: var(--badge, var(--retro-muted));
+  color: var(--retro-panel);
+  font: 8px/1.4 'Press Start 2P', monospace;
+  text-transform: uppercase;
+}
+
+.retro-badge[data-category='academic'] { --badge: var(--cat-academic); }
+.retro-badge[data-category='food'] { --badge: var(--cat-food); }
+.retro-badge[data-category='event'] { --badge: var(--cat-event); }
+.retro-badge[data-category='amenity'] { --badge: var(--cat-amenity); }
+
+.retro-popup-body .retro-desc {
+  margin-top: 8px;
+}
+
+.retro-section {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 2px dashed var(--retro-muted);
+}
+
+.retro-popup-body .retro-section-title {
+  margin-bottom: 4px;
+  font: 9px/1.5 'Press Start 2P', monospace;
+  color: var(--retro-accent);
+  text-transform: uppercase;
+}
+
+.retro-list {
+  padding: 0;
+  list-style: none;
+}
+
+.retro-list li {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding-left: 14px;
+}
+
+.retro-list li::before {
+  content: '>';
+  position: absolute;
+  left: 0;
+  color: var(--retro-accent);
+}
+
+.retro-list li + li {
+  margin-top: 4px;
+}
+
+.retro-item-sub {
+  color: var(--retro-muted);
+}
+
+.retro-empty {
+  color: var(--retro-muted);
+}
+
+/* "Route here" inside a popup: same chunky slab as the rest of the popup chrome. */
+.retro-route-btn {
+  width: 100%;
+  margin: 8px 0 2px;
+  padding: 7px 8px;
+  border: 2px solid var(--void);
+  border-radius: 0;
+  background: var(--violet);
+  color: var(--void);
+  box-shadow: var(--drop-sm), var(--glow);
+  font-family: var(--pixel);
+  font-size: 8px;
+  line-height: 1.6;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.retro-route-btn:hover {
+  background: var(--green);
+}
+
+.retro-route-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
