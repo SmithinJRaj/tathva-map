@@ -3,6 +3,7 @@ import { istDateKey, formatIstTime } from '../../shared/ist.ts'
 import { knownPlaces } from '../../shared/places.ts'
 import { openDb } from '../db.ts'
 import { createStore } from '../store.ts'
+import { commitRows } from '../import/commit.ts'
 import { parseScheduleCsv } from '../import/parse.ts'
 
 const args = process.argv.slice(2)
@@ -36,18 +37,12 @@ if (!commit) {
   console.error(`Not importing: ${errors.length} errors`)
   process.exit(1)
 } else {
-  const store = createStore(openDb(dbPath))
-  let created = 0
-  let updated = 0
-  for (const { input } of ok) {
-    const existing = store.findByTitleAndDay(input.title, istDateKey(input.startAt))
-    if (existing) {
-      store.edit(existing.id, { ...input, updatedAt: existing.updatedAt }, 'import', 'import')
-      updated++
-    } else {
-      store.create(input, 'import', 'import')
-      created++
-    }
+  const db = openDb(dbPath)
+  try {
+    const { created, updated } = commitRows(db, createStore(db), ok)
+    console.log(`Created ${created}, updated ${updated}`)
+  } catch (err) {
+    console.error(`Import failed, nothing was written: ${err instanceof Error ? err.message : String(err)}`)
+    process.exit(1)
   }
-  console.log(`Created ${created}, updated ${updated}`)
 }

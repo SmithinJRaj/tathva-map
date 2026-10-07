@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs'
 import { expect, test } from 'vitest'
-import { istDateKey } from '../../shared/ist.ts'
 import { knownPlaces } from '../../shared/places.ts'
 import { openDb } from '../db.ts'
 import { createStore } from '../store.ts'
+import { commitRows } from './commit.ts'
 import { VENUE_ALIASES } from './columns.ts'
 import { parseScheduleCsv } from './parse.ts'
 import { matchVenue } from './venues.ts'
@@ -50,17 +50,35 @@ test('a BOM and trailing blank rows change nothing', () => {
   expect(noisy.errors).toEqual(plain.errors)
 })
 
+test('a repeated title and day is reported against the first line', () => {
+  const dup = fixture + 'Robo Wars,,,ELHC,2027-02-06,18:00,19:00,\n'
+  const { ok, errors } = parseScheduleCsv(dup)
+  expect(ok).toHaveLength(3)
+  expect(errors).toContainEqual({ line: 7, message: 'Duplicate of line 2 (same title and day)' })
+})
+
 test('importing the same rows twice updates instead of duplicating', () => {
-  const store = createStore(openDb(':memory:'))
+  const db = openDb(':memory:')
+  const store = createStore(db)
   const { ok } = parseScheduleCsv(fixture)
-  const run = () => {
-    for (const { input } of ok) {
-      const existing = store.findByTitleAndDay(input.title, istDateKey(input.startAt))
-      if (existing) store.edit(existing.id, { ...input, updatedAt: existing.updatedAt }, 'import', 'import')
-      else store.create(input, 'import', 'import')
-    }
-  }
-  run()
-  run()
+  expect(commitRows(db, store, ok)).toEqual({ created: 3, updated: 0 })
+  expect(commitRows(db, store, ok)).toEqual({ created: 0, updated: 3 })
   expect(store.list()).toHaveLength(ok.length)
+})
+
+test('a failure part-way through writes nothing', () => {
+  const db = openDb(':memory:')
+  const store = createStore(db)
+  const { ok } = parseScheduleCsv(fixture)
+  let calls = 0
+  const flaky = {
+    ...store,
+    create(...args: Parameters<typeof store.create>) {
+      if (++calls === 2) throw new Error('boom')
+      return store.create(...args)
+    },
+  }
+  expect(() => commitRows(db, flaky, ok)).toThrow('boom')
+  expect(store.list()).toHaveLength(0)
+  expect(store.version()).toBe(0)
 })

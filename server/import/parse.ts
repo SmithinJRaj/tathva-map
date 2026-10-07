@@ -1,6 +1,7 @@
 import { parse } from 'csv-parse/sync'
 import { fieldErrors, eventInputSchema } from '../../shared/schedule.ts'
 import type { EventInput } from '../../shared/schedule.ts'
+import { istDateKey } from '../../shared/ist.ts'
 import { knownPlaces } from '../../shared/places.ts'
 import { COLUMN_MAP, VENUE_ALIASES } from './columns.ts'
 import { matchVenue } from './venues.ts'
@@ -24,6 +25,7 @@ export function parseScheduleCsv(text: string): ParseResult {
   }) as { record: Record<string, string | undefined>; info: { lines: number } }[]
 
   const result: ParseResult = { ok: [], errors: [] }
+  const seen = new Map<string, number>()
   for (const { record, info } of records) {
     if (Object.values(record).every((v) => !v)) continue
     const line = info.lines
@@ -55,8 +57,19 @@ export function parseScheduleCsv(text: string): ParseResult {
       endAt: `${date}T${cell('end')}:00+05:30`,
       note: cell('note') || null,
     })
-    if (parsed.success) result.ok.push({ line, input: parsed.data })
-    else fail(Object.values(fieldErrors(parsed.error)).join('; '))
+    if (!parsed.success) {
+      fail(Object.values(fieldErrors(parsed.error)).join('; '))
+      continue
+    }
+    // Rows are matched to stored events by title + IST day, so a repeat would overwrite the first.
+    const key = `${parsed.data.title}\n${istDateKey(parsed.data.startAt)}`
+    const first = seen.get(key)
+    if (first !== undefined) {
+      fail(`Duplicate of line ${first} (same title and day)`)
+      continue
+    }
+    seen.set(key, line)
+    result.ok.push({ line, input: parsed.data })
   }
   return result
 }
