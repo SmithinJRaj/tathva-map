@@ -92,3 +92,10 @@ if (import.meta.env.DEV) {
 export function effectiveCategory(place: Place, eventVenueIds: ReadonlySet<string>): PlaceCategory {
   return eventVenueIds.has(place.id) ? 'event' : place.category
 }
+
+const hostOf = new Map(indoorPlaces.map((room) => [room.id, room.inside]))
+
+/** The building a place is drawn as: an indoor room's host, or the place itself. */
+export function hostPlaceId(placeId: string): string {
+  return hostOf.get(placeId) ?? placeId
+}

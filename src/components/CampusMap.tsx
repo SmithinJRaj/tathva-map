@@ -11,7 +11,7 @@ import {
   MAX_BOUNDS_PAD,
   MAX_ZOOM,
 } from '../config/mapConfig'
-import { effectiveCategory, placesById, placesWithoutOutline, type PlaceCategory } from '../data/campus'
+import { effectiveCategory, hostPlaceId, placesById, placesWithoutOutline, type PlaceCategory } from '../data/campus'
 import { useRouting } from '../hooks/useRouting'
 import type { RouteResult } from '../lib/astar'
 import type { TravelMode } from '../lib/graph'
@@ -46,13 +46,14 @@ interface Props {
 function FocusPlace({ focus }: Pick<Props, 'focus'>) {
   const map = useMap()
   useEffect(() => {
-    const place = focus ? placesById.get(focus.placeId) : undefined
-    if (!focus || !place) return
+    const hostId = focus ? hostPlaceId(focus.placeId) : undefined
+    const place = hostId ? placesById.get(hostId) : undefined
+    if (!focus || !hostId || !place) return
     let timer: number | undefined
     let pulsed: HTMLElement | undefined
 
     const arrive = () => {
-      const layer = getPlaceLayer(focus.placeId) as L.Marker | L.Polygon | undefined
+      const layer = getPlaceLayer(hostId) as L.Marker | L.Polygon | undefined
       if (!layer) return
       if (focus.openPopup) layer.openPopup()
       const el = layer.getElement() as HTMLElement | undefined

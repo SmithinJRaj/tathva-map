@@ -1,9 +1,9 @@
 import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode } from 'react'
-import { eventState } from '../../shared/classify.ts'
 import { knownPlaces } from '../../shared/places.ts'
 import type { ScheduleEvent } from '../../shared/schedule.ts'
 import { useNow } from './useNow.ts'
 import { useSchedule } from './useSchedule.ts'
+import { indexByVenue } from './venueIndex.ts'
 
 interface ScheduleData {
   events: ScheduleEvent[]
@@ -31,21 +31,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     }
   }, [events])
   const value = useMemo<ScheduleData>(() => {
-    const byPlace = new Map<string, ScheduleEvent[]>()
-    const liveVenueIds = new Set<string>()
-    const eventVenueIds = new Set<string>()
-    for (const e of events) {
-      const list = byPlace.get(e.placeId)
-      if (list) list.push(e)
-      else byPlace.set(e.placeId, [e])
-      const state = eventState(e, now)
-      if (state === 'live') {
-        liveVenueIds.add(e.placeId)
-        eventVenueIds.add(e.placeId)
-      } else if (state === 'upcoming') {
-        eventVenueIds.add(e.placeId)
-      }
-    }
+    const { byPlace, liveVenueIds, eventVenueIds } = indexByVenue(events, now)
     return { events, now, stale, fetchedAt, byPlace, liveVenueIds, eventVenueIds }
   }, [events, now, stale, fetchedAt])
   return <ScheduleContext.Provider value={value}>{children}</ScheduleContext.Provider>
