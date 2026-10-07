@@ -12,10 +12,23 @@ import { ScheduleProvider } from './schedule/ScheduleContext.tsx'
 
 registerSW({ immediate: true })
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <ScheduleProvider>
-      <App />
-    </ScheduleProvider>
-  </StrictMode>,
-)
+const root = createRoot(document.getElementById('root')!)
+
+if (location.pathname.startsWith('/admin')) {
+  // Organisers' page: its own chunk, and none of the attendee map or schedule polling.
+  void import('./admin/AdminApp.tsx').then(({ default: AdminApp }) =>
+    root.render(
+      <StrictMode>
+        <AdminApp />
+      </StrictMode>,
+    ),
+  )
+} else {
+  root.render(
+    <StrictMode>
+      <ScheduleProvider>
+        <App />
+      </ScheduleProvider>
+    </StrictMode>,
+  )
+}
