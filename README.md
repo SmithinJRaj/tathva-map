@@ -9,6 +9,15 @@ npm run dev -- --host   # self-signed HTTPS, so phone cameras work on the LAN
 npm run build
 ```
 
+## Live schedule
+
+Events come from a small API server rather than the bundle, so organisers can change a time,
+delay or cancel an event while the fest is running. The map polls it and falls back to the
+last cached copy offline. Locally, run `DB_PATH=/tmp/s.db SESSION_SECRET=<32+ chars>
+COOKIE_SECURE=false npm run server` next to `npm run dev`; `/admin` is the organiser login.
+Running it for real (env vars, admins, importing the sheet, nginx, backups) is in
+[`server/README.md`](server/README.md).
+
 ## How the map is put together
 
 There are no live map tiles. The campus is a single image, stretched between two geographic
