@@ -3,7 +3,7 @@ export type SheetSnap = 'peek' | 'half' | 'full'
 export const SHEET_PEEK_PX = 56
 
 /** Space left above a full sheet so the trip planner stays visible. */
-const FULL_MARGIN_PX = 120
+const FULL_MARGIN_PX = 180
 
 export function sheetHeight(snap: SheetSnap, viewportPx: number): number {
   if (snap === 'peek') return SHEET_PEEK_PX

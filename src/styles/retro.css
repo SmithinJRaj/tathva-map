@@ -445,14 +445,23 @@
   transition: none;
 }
 
-.sheet-handle {
+.sheet-strip {
   flex: none;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
   height: 56px;
-  padding: 5px 10px 2px;
+  padding-bottom: 3px;
+}
+
+.sheet-handle {
+  flex: 1;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px 0;
   touch-action: none;
   cursor: grab;
   user-select: none;

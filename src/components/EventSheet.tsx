@@ -22,9 +22,11 @@ export function EventSheet({ onLocate }: Props) {
   const [snap, setSnap] = useState<SheetSnap>('peek')
   const [tab, setTab] = useState<Tab>('live')
   const [viewport, setViewport] = useState(() => window.innerHeight)
-  const [drag, setDrag] = useState<{ startY: number; startHeight: number; height: number } | null>(
-    null,
-  )
+  const [drag, setDrag] = useState<{
+    startY: number
+    startHeight: number
+    height: number
+  } | null>(null)
 
   useEffect(() => {
     const onResize = () => setViewport(window.innerHeight)
@@ -60,11 +62,14 @@ export function EventSheet({ onLocate }: Props) {
     setDrag(null)
   }
 
-  const select = (placeId: string) => {
-    if (!placesById.has(placeId)) return
-    setSnap('peek')
-    onLocate(placeId)
-  }
+  // An event at a venue the map does not know still lists, just without tap-to-locate.
+  const locatable = (placeId: string) =>
+    placesById.has(placeId)
+      ? () => {
+          setSnap('peek')
+          onLocate(placeId)
+        }
+      : undefined
 
   const offline =
     stale && fetchedAt !== null
@@ -78,33 +83,35 @@ export function EventSheet({ onLocate }: Props) {
       data-dragging={drag ? 'true' : undefined}
       aria-label="Live and upcoming events"
     >
-      <div
-        className="sheet-handle"
-        role="button"
-        tabIndex={0}
-        aria-expanded={snap !== 'peek'}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={() => setDrag(null)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault()
-            setSnap(snap === 'peek' ? 'half' : 'peek')
-          }
-        }}
-      >
-        <span className="sheet-grip" aria-hidden />
-        <p className="pix-sm sheet-summary">
-          <span style={{ color: 'var(--red)' }}>●</span> {live.length} LIVE · {upcomingCount} UP NEXT
-          {offline}
-        </p>
+      <div className="sheet-strip">
+        <div
+          className="sheet-handle"
+          role="button"
+          tabIndex={0}
+          aria-expanded={snap !== 'peek'}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={() => setDrag(null)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              setSnap(snap === 'peek' ? 'half' : 'peek')
+            }
+          }}
+        >
+          <span className="sheet-grip" aria-hidden />
+          <p className="pix-sm sheet-summary">
+            <span style={{ color: 'var(--red)' }}>●</span> {live.length} LIVE · {upcomingCount} UP
+            NEXT
+            {offline}
+          </p>
+        </div>
         <a
           href="https://www.openstreetmap.org/copyright"
           target="_blank"
           rel="noreferrer"
           className="pix-sm sheet-attribution"
-          onPointerDown={(e) => e.stopPropagation()}
         >
           {MAP_ATTRIBUTION}
         </a>
@@ -140,7 +147,7 @@ export function EventSheet({ onLocate }: Props) {
                 event={event}
                 now={now}
                 showVenue
-                onSelect={() => select(event.placeId)}
+                onSelect={locatable(event.placeId)}
               />
             ))
           ))}
@@ -158,7 +165,7 @@ export function EventSheet({ onLocate }: Props) {
                     event={event}
                     now={now}
                     showVenue
-                    onSelect={() => select(event.placeId)}
+                    onSelect={locatable(event.placeId)}
                   />
                 ))}
               </div>
