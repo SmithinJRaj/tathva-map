@@ -60,6 +60,10 @@ test('schedule is public with ETag and 304 on match; ETag changes after a write'
 
   const cached = await app.inject({ method: 'GET', url: '/api/schedule', headers: { 'if-none-match': '"0"' } })
   expect(cached.statusCode).toBe(304)
+  const weak = await app.inject({ method: 'GET', url: '/api/schedule', headers: { 'if-none-match': 'W/"0"' } })
+  expect(weak.statusCode).toBe(304)
+  const list = await app.inject({ method: 'GET', url: '/api/schedule', headers: { 'if-none-match': '"7", "0"' } })
+  expect(list.statusCode).toBe(304)
   expect(cached.body).toBe('')
 
   await createEvent(await cookieFor(app))
@@ -247,4 +251,9 @@ test('with trustProxy, each X-Forwarded-For client gets its own rate-limit bucke
 test('without trustProxy, X-Forwarded-For is ignored by the rate limiter', async () => {
   expect((await floodFrom(app, '10.0.0.1', 10)).at(-1)).toBe(401)
   expect((await floodFrom(app, '10.0.0.2', 1))[0]).toBe(429)
+})
+
+test('logout works without a session', async () => {
+  const res = await app.inject({ method: 'POST', url: '/api/admin/logout' })
+  expect(res.statusCode).toBe(204)
 })

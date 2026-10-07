@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { expect, test } from 'vitest'
+import { istDateKey } from '../../shared/ist.ts'
 import { knownPlaces } from '../../shared/places.ts'
 import { openDb } from '../db.ts'
 import { createStore } from '../store.ts'
@@ -64,6 +65,28 @@ test('importing the same rows twice updates instead of duplicating', () => {
   expect(commitRows(db, store, ok)).toEqual({ created: 3, updated: 0 })
   expect(commitRows(db, store, ok)).toEqual({ created: 0, updated: 3 })
   expect(store.list()).toHaveLength(ok.length)
+})
+
+test('re-importing a rescheduled row is a correction, not a delay', () => {
+  const db = openDb(':memory:')
+  const store = createStore(db)
+  const { ok } = parseScheduleCsv(fixture)
+  commitRows(db, store, ok)
+  const shifted = ok.map((r, i) =>
+    i === 0
+      ? {
+          input: {
+            ...r.input,
+            startAt: new Date(Date.parse(r.input.startAt) + 30 * 60_000).toISOString(),
+            endAt: new Date(Date.parse(r.input.endAt) + 30 * 60_000).toISOString(),
+          },
+        }
+      : r,
+  )
+  commitRows(db, store, shifted)
+  const e = store.findByTitleAndDay(shifted[0].input.title, istDateKey(shifted[0].input.startAt))
+  expect(e?.startAt).toBe(shifted[0].input.startAt)
+  expect(e?.originalStartAt).toBeNull()
 })
 
 test('a failure part-way through writes nothing', () => {

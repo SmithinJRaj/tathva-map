@@ -41,7 +41,7 @@ export interface Store {
   edit(id: string, patch: EventPatch, admin: string, action?: 'edit' | 'import'): ScheduleEvent
   delay(id: string, minutes: number, admin: string, expectedUpdatedAt?: string): ScheduleEvent
   cancel(id: string, note: string | undefined, admin: string, expectedUpdatedAt?: string): ScheduleEvent
-  restore(id: string, admin: string, expectedUpdatedAt?: string): ScheduleEvent
+  restore(id: string, note: string | undefined, admin: string, expectedUpdatedAt?: string): ScheduleEvent
   remove(id: string, admin: string): void
   audit(eventId?: string): AuditEntry[]
   findByTitleAndDay(title: string, dateKey: string): ScheduleEvent | null
@@ -212,8 +212,9 @@ export function createStore(db: Database.Database): Store {
         note: note ?? before.note,
       })),
 
-    restore: (id, admin, expected) =>
-      change(id, admin, 'restore', expected, (before) => ({ ...before, status: 'scheduled' })),
+    // The cancel note ("Rain") would be wrong once the event is back on, so it goes unless replaced.
+    restore: (id, note, admin, expected) =>
+      change(id, admin, 'restore', expected, (before) => ({ ...before, status: 'scheduled', note: note ?? null })),
 
     remove(id, admin) {
       db.transaction(() => {

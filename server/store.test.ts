@@ -68,8 +68,16 @@ test('cancel then restore toggles status', () => {
   const e = store.create(input, 'ann')
   const c = store.cancel(e.id, 'rain', 'ann')
   expect(c).toMatchObject({ status: 'cancelled', note: 'rain' })
-  expect(store.restore(e.id, 'ann').status).toBe('scheduled')
-  expect(store.cancel(e.id, undefined, 'ann').note).toBe('rain')
+  expect(store.restore(e.id, undefined, 'ann').status).toBe('scheduled')
+  expect(store.cancel(e.id, undefined, 'ann').note).toBeNull()
+})
+
+test('restore clears the note unless one is supplied', () => {
+  const e = store.create(input, 'ann')
+  store.cancel(e.id, 'Rain', 'ann')
+  expect(store.restore(e.id, undefined, 'ann').note).toBeNull()
+  store.cancel(e.id, 'Rain', 'ann')
+  expect(store.restore(e.id, 'Back on', 'ann').note).toBe('Back on')
 })
 
 test('remove hides the event and keeps a delete audit row', () => {

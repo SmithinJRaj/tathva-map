@@ -41,10 +41,11 @@ npm run server:start
 
 ```bash
 npm run admin -- add <username> <display name>
+npm run admin -- remove <username>    # deletes the account and signs it out
 ```
 
 Prompts for a password (not echoed). Running it again for an existing username replaces the
-password. The display name is what the audit log and "changed by" messages show.
+password and signs that admin out everywhere. The display name is what the audit log and "changed by" messages show.
 
 ## Importing the events sheet
 
@@ -58,6 +59,10 @@ npm run import-schedule -- events.csv --commit   # writes
 `--commit` is all-or-nothing: it refuses to run while any row has an error. Re-running
 updates events matched by title + IST day instead of duplicating them, so the sheet can be
 re-imported after edits (but a row whose title or day changed becomes a new event).
+
+**Warning:** re-importing overwrites the times, venues and notes of every matched event with the
+sheet's values, including anything changed in `/admin` since the last import. Import
+reschedules are treated as corrections, so they are not shown as DELAYED.
 
 Expected columns (headers are mapped in `server/import/columns.ts`, which also holds the
 venue aliases such as `OAT`):

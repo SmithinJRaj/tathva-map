@@ -61,18 +61,19 @@ export const adminRoutes: FastifyPluginAsync<Deps> = async (app, { db, store, co
     },
   )
 
+  app.post('/api/admin/logout', async (req, reply) => {
+    const token = sessionToken(req)
+    if (token) deleteSession(db, token)
+    reply.clearCookie(SESSION_COOKIE, { path: '/' })
+    return reply.code(204).send()
+  })
+
+
   await app.register(async (admin) => {
     admin.addHook('preHandler', requireAdmin)
 
     const who = (req: FastifyRequest) => req.admin!.username
     type IdParams = { Params: { id: string } }
-
-    admin.post('/api/admin/logout', async (req, reply) => {
-      const token = sessionToken(req)
-      if (token) deleteSession(db, token)
-      reply.clearCookie(SESSION_COOKIE, { path: '/' })
-      return reply.code(204).send()
-    })
 
     admin.get('/api/admin/me', async (req) => req.admin)
 
@@ -96,8 +97,8 @@ export const adminRoutes: FastifyPluginAsync<Deps> = async (app, { db, store, co
     })
 
     admin.post<IdParams>('/api/admin/events/:id/restore', async (req) => {
-      const { updatedAt } = restoreSchema.parse(req.body ?? {})
-      return store.restore(req.params.id, who(req), updatedAt)
+      const { note, updatedAt } = restoreSchema.parse(req.body ?? {})
+      return store.restore(req.params.id, note, who(req), updatedAt)
     })
 
     admin.delete<IdParams>('/api/admin/events/:id', async (req, reply) => {

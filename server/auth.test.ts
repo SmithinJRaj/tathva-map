@@ -6,6 +6,7 @@ import {
   createSession,
   deleteSession,
   getSessionAdmin,
+  removeAdmin,
   upsertAdmin,
 } from './auth.ts'
 
@@ -59,4 +60,24 @@ test('deleteSession invalidates the token', async () => {
   expect(getSessionAdmin(db, token)).not.toBeNull()
   deleteSession(db, token)
   expect(getSessionAdmin(db, token)).toBeNull()
+})
+
+test('resetting a password revokes existing sessions', async () => {
+  const db = openDb(':memory:')
+  await upsertAdmin(db, 'parthiv', 'Parthiv', 'first-password-1')
+  const token = createSession(db, 'parthiv')
+  expect(getSessionAdmin(db, token)).not.toBeNull()
+  await upsertAdmin(db, 'parthiv', 'Parthiv', 'second-password-2')
+  expect(getSessionAdmin(db, token)).toBeNull()
+})
+
+test('removeAdmin deletes the account and its sessions', async () => {
+  const db = openDb(':memory:')
+  await upsertAdmin(db, 'parthiv', 'Parthiv', 'correct-horse-1')
+  const token = createSession(db, 'parthiv')
+  expect(removeAdmin(db, 'parthiv')).toBe(true)
+  expect(getSessionAdmin(db, token)).toBeNull()
+  expect(await checkLogin(db, 'parthiv', 'correct-horse-1')).toBeNull()
+  expect(db.prepare('SELECT COUNT(*) AS n FROM sessions').get()).toEqual({ n: 0 })
+  expect(removeAdmin(db, 'parthiv')).toBe(false)
 })

@@ -422,9 +422,6 @@
   .place-pulse {
     animation: none;
   }
-  .place-live {
-    filter: none;
-  }
 }
 
 /* --- Live / Up next sheet -------------------------------------------------------------- */

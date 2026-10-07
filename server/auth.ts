@@ -25,11 +25,22 @@ export async function upsertAdmin(
   password: string,
 ): Promise<void> {
   const passwordHash = await hashPassword(password)
-  db.prepare(
-    `INSERT INTO admins (username, display_name, password_hash) VALUES (?, ?, ?)
-     ON CONFLICT(username) DO UPDATE SET
-       display_name = excluded.display_name, password_hash = excluded.password_hash`,
-  ).run(username, displayName, passwordHash)
+  db.transaction(() => {
+    db.prepare(
+      `INSERT INTO admins (username, display_name, password_hash) VALUES (?, ?, ?)
+       ON CONFLICT(username) DO UPDATE SET
+         display_name = excluded.display_name, password_hash = excluded.password_hash`,
+    ).run(username, displayName, passwordHash)
+    // A reset must lock out anyone holding the old credentials.
+    db.prepare('DELETE FROM sessions WHERE username = ?').run(username)
+  })()
+}
+
+export function removeAdmin(db: Database.Database, username: string): boolean {
+  return db.transaction(() => {
+    db.prepare('DELETE FROM sessions WHERE username = ?').run(username)
+    return db.prepare('DELETE FROM admins WHERE username = ?').run(username).changes > 0
+  })()
 }
 
 export async function checkLogin(

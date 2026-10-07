@@ -7,6 +7,8 @@ interface Props {
   event: ScheduleEvent
   now: Date
   showVenue: boolean
+  /** Venue popups have room for the longer blurb; the sheet shows the note only. */
+  showDescription?: boolean
   onSelect?: () => void
 }
 
@@ -23,7 +25,7 @@ function status(event: ScheduleEvent, now: Date): { label: string; tone: string 
   return null
 }
 
-export function EventRow({ event, now, showVenue, onSelect }: Props) {
+export function EventRow({ event, now, showVenue, showDescription, onSelect }: Props) {
   const cancelled = event.status === 'cancelled'
   const shifted = timeShift(event) && event.originalStartAt
   const badge = status(event, now)
@@ -53,6 +55,8 @@ export function EventRow({ event, now, showVenue, onSelect }: Props) {
             </span>
           )}
         </span>
+        {event.note && <span className="event-note">{event.note}</span>}
+        {showDescription && event.description && <span className="event-desc">{event.description}</span>}
       </span>
     </>
   )

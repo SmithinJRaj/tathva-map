@@ -63,7 +63,7 @@ export const delaySchema = z.object({
   updatedAt: z.string().optional(),
 })
 export const cancelSchema = z.object({ note: z.string().max(200).optional(), updatedAt: z.string().optional() })
-export const restoreSchema = z.object({ updatedAt: z.string().optional() })
+export const restoreSchema = z.object({ updatedAt: z.string().optional(), note: z.string().max(200).optional() })
 export const loginSchema = z.object({ username: z.string().min(1), password: z.string().min(1) })
 
 export type FieldErrors = Record<string, string>

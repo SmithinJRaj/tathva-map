@@ -99,6 +99,8 @@ export function ScheduleList({ admin, onLogout, onUnauthorized, onAdd, onEdit }:
         showToast({ text: 'That change was rejected' })
       } else if (err instanceof ApiError && err.status === 404) {
         showToast({ text: 'Event no longer exists', action: { label: 'Reload', run: () => { showToast(null); void refetch() } } })
+      } else if (!(err instanceof ApiError && (err.status === 401 || err.status === 0))) {
+        showToast({ text: 'Something went wrong, try again' })
       }
     }
   }

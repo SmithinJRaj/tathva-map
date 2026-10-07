@@ -15,7 +15,7 @@ export function commitRows(
     for (const { input } of rows) {
       const existing = store.findByTitleAndDay(input.title, istDateKey(input.startAt))
       if (existing) {
-        store.edit(existing.id, { ...input, updatedAt: existing.updatedAt }, 'import', 'import')
+        store.edit(existing.id, { ...input, updatedAt: existing.updatedAt, correction: true }, 'import', 'import')
         updated++
       } else {
         store.create(input, 'import', 'import')

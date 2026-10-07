@@ -30,6 +30,15 @@ const baseStyle = (color: string): L.PathOptions => ({
   lineCap: 'butt',
 })
 
+// react-leaflet calls setStyle whenever pathOptions changes identity, which would reset a
+// highlighted polygon on every render. One object per colour keeps identity stable.
+const baseStyles = new Map<string, L.PathOptions>()
+const stableBase = (color: string): L.PathOptions => {
+  let style = baseStyles.get(color)
+  if (!style) baseStyles.set(color, (style = baseStyle(color)))
+  return style
+}
+
 const activeStyle = (color: string): L.PathOptions => ({
   ...baseStyle(color),
   weight: 3,
@@ -85,7 +94,7 @@ export function PlaceLayer({ interactive, hidden, onRouteTo }: Props) {
             // `interactive` is only read when Leaflet creates the path, so remount on change.
             key={`${place.id}-${interactive}`}
             positions={place.polygon!}
-            pathOptions={baseStyle(color)}
+            pathOptions={stableBase(color)}
             interactive={interactive}
             eventHandlers={{
               add: (e) =>
@@ -95,7 +104,7 @@ export function PlaceLayer({ interactive, hidden, onRouteTo }: Props) {
               },
               mouseout: (e) => {
                 const path = pathOf(e)
-                if (canHover && !path.isPopupOpen()) path.setStyle(baseStyle(color))
+                if (canHover && !path.isPopupOpen()) path.setStyle(stableBase(color))
               },
               popupopen: (e) => {
                 pathOf(e).setStyle(activeStyle(color))
@@ -103,7 +112,7 @@ export function PlaceLayer({ interactive, hidden, onRouteTo }: Props) {
                 // popup layout after rendering its content, which picks this value up.
                 e.popup.options.maxHeight = popupMaxHeight(map)
               },
-              popupclose: (e) => pathOf(e).setStyle(baseStyle(color)),
+              popupclose: (e) => pathOf(e).setStyle(stableBase(color)),
             }}
           >
             {interactive && (

@@ -1,12 +1,13 @@
 import { Writable } from 'node:stream'
 import { createInterface } from 'node:readline'
 import { openDb } from '../db.ts'
-import { upsertAdmin } from '../auth.ts'
+import { removeAdmin, upsertAdmin } from '../auth.ts'
 
-const usage = 'Usage: npm run admin -- add <username> <display name...>'
+const usage = 'Usage: npm run admin -- add <username> <display name...> | remove <username>'
 
 const [command, username, ...nameParts] = process.argv.slice(2)
-if (command !== 'add' || !username || nameParts.length === 0) {
+const valid = command === 'add' ? nameParts.length > 0 : command === 'remove' && nameParts.length === 0
+if (!username || !valid) {
   console.error(usage)
   process.exit(1)
 }
@@ -15,6 +16,14 @@ const dbPath = process.env.DB_PATH
 if (!dbPath) {
   console.error('DB_PATH is not set')
   process.exit(1)
+}
+
+if (command === 'remove') {
+  const db = openDb(dbPath)
+  const removed = removeAdmin(db, username)
+  db.close()
+  console.log(removed ? `Removed admin ${username}` : `No such admin ${username}`)
+  process.exit(removed ? 0 : 1)
 }
 
 // Output is muted while the password is typed so it is not echoed.

@@ -269,6 +269,20 @@ button.event-row:focus-visible {
   color: var(--muted);
 }
 
+.event-note,
+.event-desc {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.event-note {
+  color: var(--amber);
+}
+
+.event-desc {
+  font-size: 0.85em;
+}
+
 .event-chip {
   padding: 0 4px;
   border: 2px solid var(--void);
