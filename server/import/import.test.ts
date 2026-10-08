@@ -105,3 +105,48 @@ test('a failure part-way through writes nothing', () => {
   expect(store.list()).toHaveLength(0)
   expect(store.version()).toBe(0)
 })
+
+test('a row with no Date cell takes the date given for the file', () => {
+  // The sheet keeps the date in the tab name, so exported rows carry none.
+  const csv = 'Title,Description,Category,Venue,Date,Start,End,Note\nQuiz,,talk,NLHC,,10:00,11:00,\n'
+  const { ok, errors } = parseScheduleCsv(csv, { defaultDate: '2027-02-07' })
+  expect(errors).toEqual([])
+  expect(ok).toHaveLength(1)
+  expect(istDateKey(ok[0].input.startAt)).toBe('2027-02-07')
+})
+
+test('a Date cell wins over the date given for the file', () => {
+  const csv = 'Title,Description,Category,Venue,Date,Start,End,Note\nQuiz,,talk,NLHC,2027-02-08,10:00,11:00,\n'
+  const { ok } = parseScheduleCsv(csv, { defaultDate: '2027-02-07' })
+  expect(istDateKey(ok[0].input.startAt)).toBe('2027-02-08')
+})
+
+test('a row with no date anywhere is an error, not a silent skip', () => {
+  const csv = 'Title,Description,Category,Venue,Date,Start,End,Note\nQuiz,,talk,NLHC,,10:00,11:00,\n'
+  const { ok, errors } = parseScheduleCsv(csv)
+  expect(ok).toEqual([])
+  expect(errors[0].message).toMatch(/No date/)
+})
+
+test('every-day rows fan out to one event per fest day, distinct by day', () => {
+  const csv = 'Title,Description,Category,Venue,Date,Start,End,Note\nFood Stalls,,other,OAT,,12:00,20:00,\n'
+  const days = ['2027-02-06', '2027-02-07', '2027-02-08']
+  const { ok, errors } = parseScheduleCsv(csv, { everyDay: days })
+  expect(errors).toEqual([])
+  expect(ok.map((r) => istDateKey(r.input.startAt))).toEqual(days)
+  // Same title across days is what keeps them three stable events, not one overwritten thrice.
+  expect(new Set(ok.map((r) => r.input.title)).size).toBe(1)
+})
+
+test('every-day ignores a Date cell rather than silently honouring it', () => {
+  const csv = 'Title,Description,Category,Venue,Date,Start,End,Note\nFood Stalls,,other,OAT,2027-01-01,12:00,20:00,\n'
+  const { ok } = parseScheduleCsv(csv, { everyDay: ['2027-02-06', '2027-02-07'] })
+  expect(ok.map((r) => istDateKey(r.input.startAt))).toEqual(['2027-02-06', '2027-02-07'])
+})
+
+test('a missing Category column still parses, as other', () => {
+  const csv = 'Title,Description,Venue,Date,Start,End,Note\nQuiz,,NLHC,2027-02-06,10:00,11:00,\n'
+  const { ok, errors } = parseScheduleCsv(csv)
+  expect(errors).toEqual([])
+  expect(ok[0].input.category).toBe('other')
+})

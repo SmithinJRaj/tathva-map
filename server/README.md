@@ -56,6 +56,21 @@ npm run import-schedule -- events.csv            # dry run: prints every row and
 npm run import-schedule -- events.csv --commit   # writes
 ```
 
+The sheet keeps the date in the **tab name**, not in the rows, so export one tab at a time
+and say which day it is:
+
+```bash
+npm run import-schedule -- day1.csv --date=2027-02-06 --commit
+npm run import-schedule -- day2.csv --date=2027-02-07 --commit
+npm run import-schedule -- everyday.csv --every-day --commit
+```
+
+`--date` fills in rows that have no Date cell; a row that has one still wins. `--every-day`
+turns each row into one event per fest day, for the "everyday events" tab — it reads the
+dates from `FEST_DAYS` in `src/schedule/festDays.ts` and refuses to run while that is empty.
+The expansions share a title and differ by day, which is what the store matches on, so they
+stay three distinct events and keep their ids across re-imports.
+
 `--commit` is all-or-nothing: it refuses to run while any row has an error. Re-running
 updates events matched by title + IST day instead of duplicating them, so the sheet can be
 re-imported after edits (but a row whose title or day changed becomes a new event).
