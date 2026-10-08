@@ -79,6 +79,33 @@ re-imported after edits (but a row whose title or day changed becomes a new even
 sheet's values, including anything changed in `/admin` since the last import. Import
 reschedules are treated as corrections, so they are not shown as DELAYED.
 
+`--skip-errors` imports the rows that parsed and lists the rest. Without it one bad row
+stops the whole import, which is right when the sheet is meant to be complete and wrong
+while it is still being written. The three fest days go in as:
+
+```bash
+npm run import-schedule -- Day_1.csv --date=2026-10-09 --commit --skip-errors
+npm run import-schedule -- Day_2.csv --date=2026-10-10 --commit --skip-errors
+npm run import-schedule -- Day_3.csv --date=2026-10-11 --commit --skip-errors
+npm run import-schedule -- Everyday.csv --every-day --commit --skip-errors
+```
+
+### What the sheet actually looks like
+
+Two header vocabularies are accepted, so both the canonical columns below and the real
+events sheet import. The sheet says `Event` for the title and keeps the start and end
+together in one `Time` column; it also opens each tab with a title row (`DAY 1`) above the
+headers, so the header row is found by name rather than assumed to be first.
+
+`Time` is read by `server/import/times.ts`, which parses an unambiguous range and **guesses
+nothing else** — no default durations, no inferred AM, no invented end times. A cell holding
+only a start, prose, or its own date is reported and added in `/admin` by someone who knows
+what it meant. `11:00PM to 12:30PM` is passed through to fail validation rather than
+silently read as 11 AM, which would be a twelve-hour guess.
+
+Category comes from the sheet's section headings (`EXPO:`, `Informals:`) where there is no
+Category column; the mapping is `SECTION_CATEGORIES` in `columns.ts`.
+
 Expected columns (headers are mapped in `server/import/columns.ts`, which also holds the
 venue aliases such as `OAT`):
 

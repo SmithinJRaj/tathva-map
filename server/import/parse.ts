@@ -3,7 +3,9 @@ import { fieldErrors, eventInputSchema } from '../../shared/schedule.ts'
 import type { EventInput } from '../../shared/schedule.ts'
 import { istDateKey } from '../../shared/ist.ts'
 import { knownPlaces } from '../../shared/places.ts'
-import { COLUMN_MAP, VENUE_ALIASES, VENUE_ROOMS } from './columns.ts'
+import { COLUMN_MAP, SECTION_CATEGORIES, VENUE_ALIASES, VENUE_ROOMS } from './columns.ts'
+import { parseTimeRange } from './times.ts'
+import type { ColumnField } from './columns.ts'
 import { matchVenue, suggestVenue } from './venues.ts'
 
 export interface ParseResult {
@@ -29,25 +31,77 @@ export interface ParseOptions {
 const DATE = /^\d{4}-\d{2}-\d{2}$/
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/
 
+/**
+ * Which column holds each field, by header name.
+ *
+ * The sheet's tabs open with a title row ("DAY 1") above the headers, so the header is not
+ * always the first line. Rather than hard-code an offset, find the first row that names the
+ * columns we need; anything above it is decoration.
+ */
+function findHeader(rows: string[][]): { index: number; columns: Partial<Record<ColumnField, number>> } | null {
+  for (const [index, row] of rows.entries()) {
+    const columns: Partial<Record<ColumnField, number>> = {}
+    for (const [field, names] of Object.entries(COLUMN_MAP) as [ColumnField, readonly string[]][]) {
+      const at = row.findIndex((cell) => names.includes(cell.trim().toLowerCase()))
+      if (at !== -1) columns[field] = at
+    }
+    // A title and a venue are the least a row needs to be an event at all.
+    if (columns.title !== undefined && columns.venue !== undefined) return { index, columns }
+  }
+  return null
+}
+
 export function parseScheduleCsv(text: string, options: ParseOptions = {}): ParseResult {
-  const records = parse(text, {
-    columns: true,
-    skip_empty_lines: true,
+  const rows = parse(text, {
+    columns: false,
+    skip_empty_lines: false,
     bom: true,
     relax_column_count: true,
     trim: true,
-    info: true,
-  }) as { record: Record<string, string | undefined>; info: { lines: number } }[]
+  }) as string[][]
 
   const result: ParseResult = { ok: [], errors: [] }
+  const header = findHeader(rows)
+  if (!header) {
+    result.errors.push({ line: 1, message: 'No header row naming a title and a venue column' })
+    return result
+  }
+
   const seen = new Map<string, number>()
-  for (const { record, info } of records) {
-    if (Object.values(record).every((v) => !v)) continue
-    const line = info.lines
-    const cell = (key: keyof typeof COLUMN_MAP) => record[COLUMN_MAP[key]] ?? ''
+  // Set by a section header row ("EXPO:") and applied until the next one, since the sheet
+  // groups rows under headings instead of carrying a Category column.
+  let section: string | null = null
+
+  for (let i = header.index + 1; i < rows.length; i++) {
+    const row = rows[i]
+    const line = i + 1
+    const at = (key: ColumnField) => {
+      const index = header.columns[key]
+      return index === undefined ? '' : (row[index] ?? '').trim()
+    }
     const fail = (message: string) => result.errors.push({ line, message })
 
+    if (row.every((cell) => !cell.trim())) continue
+
+    // "EXPO:" with nothing else on the row is a heading, not an event.
+    const title = at('title')
+    const isHeading = title.endsWith(':') && row.every((cell, index) => index === header.columns.title || !cell.trim())
+    if (isHeading) {
+      section = SECTION_CATEGORIES[title.slice(0, -1).trim().toLowerCase()] ?? null
+      continue
+    }
+    if (!title) continue
+
+    const cell = (key: ColumnField) => {
+      if (key === 'category') return at('category') || section || ''
+      return at(key)
+    }
+
     const venueText = cell('venue')
+    if (!venueText) {
+      fail('No venue given')
+      continue
+    }
     const venue = matchVenue(venueText, knownPlaces, VENUE_ALIASES, VENUE_ROOMS)
     if (!venue) {
       // Name the near miss: the matcher refuses an uncertain guess, so the human needs to
@@ -60,11 +114,31 @@ export function parseScheduleCsv(text: string, options: ParseOptions = {}): Pars
     // One row becomes one event per date: its own, the file's, or every fest day.
     const dates = options.everyDay?.length ? options.everyDay : [cell('date') || options.defaultDate || '']
 
-    const times = [cell('start'), cell('end')]
-    const badTime = times.find((t) => !TIME.test(t))
-    if (badTime !== undefined) {
-      fail(`Bad time "${badTime}"`)
-      continue
+    let times: [string, string]
+    if (cell('start') || cell('end')) {
+      times = [cell('start'), cell('end')]
+      const badTime = times.find((t) => !TIME.test(t))
+      if (badTime !== undefined) {
+        fail(`Bad time "${badTime}"`)
+        continue
+      }
+    } else {
+      const parsed = parseTimeRange(cell('time'))
+      if (parsed.kind === 'unparsed') {
+        fail(`No usable time: ${parsed.reason}. Add it in /admin.`)
+        continue
+      }
+      if (parsed.ranges.length > 1) {
+        // Two sessions share a title and a day, which is how events are identified here, so
+        // the second would overwrite the first on the next import rather than sit beside it.
+        fail(
+          `Two sessions in one row (${parsed.ranges
+            .map((r) => `${r.start}-${r.end}`)
+            .join(', ')}). Split them into two rows with distinct titles, or add the second in /admin.`,
+        )
+        continue
+      }
+      times = [parsed.ranges[0].start, parsed.ranges[0].end]
     }
     const badDate = dates.find((d) => !DATE.test(d))
     if (badDate !== undefined) {

@@ -1,14 +1,29 @@
-// Sheet header for each field. Replace with the real headers once the sheet is shared.
-export const COLUMN_MAP: Record<'title' | 'description' | 'category' | 'venue' | 'date' | 'start' | 'end' | 'note', string> = {
-  title: 'Title',
-  description: 'Description',
-  category: 'Category',
-  venue: 'Venue',
-  date: 'Date',
-  start: 'Start',
-  end: 'End',
-  note: 'Note',
-}
+/**
+ * Header names accepted for each field, lowercased, first match wins.
+ *
+ * Two vocabularies, because the real events sheet does not use the canonical one: it says
+ * "Event" for the title and keeps start and end together in one "Time" column. Both are
+ * listed rather than renaming the sheet, so an export and a hand-written CSV both import.
+ *
+ * Absent on purpose: the sheet's "what's happening" and "map" are yes/no flags rather than
+ * prose, so neither is a Description; and "Point of Contact" holds volunteers' names and
+ * phone numbers, which the user asked to drop and which would otherwise be published in a
+ * venue popup.
+ */
+export const COLUMN_MAP = {
+  title: ['title', 'event'],
+  description: ['description'],
+  category: ['category'],
+  venue: ['venue'],
+  date: ['date'],
+  start: ['start'],
+  end: ['end'],
+  /** The sheet's single column holding a whole range; see times.ts. */
+  time: ['time'],
+  note: ['note'],
+} as const satisfies Record<string, readonly string[]>
+
+export type ColumnField = keyof typeof COLUMN_MAP
 
 /**
  * Normalised alias (see normalise in venues.ts) -> place id. Lowercase, single-spaced.

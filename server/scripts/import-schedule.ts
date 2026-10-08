@@ -12,6 +12,7 @@ const commit = args.includes('--commit')
 const file = args.find((a) => !a.startsWith('--'))
 const dateFlag = args.find((a) => a.startsWith('--date='))?.slice('--date='.length)
 const everyDay = args.includes('--every-day')
+const skipErrors = args.includes('--skip-errors')
 if (!file) {
   console.error(
     'Usage: npm run import-schedule -- <file.csv> [--date=YYYY-MM-DD] [--every-day] [--commit]\n' +
@@ -60,14 +61,23 @@ for (const { line, message } of errors) console.error(`${line} · ERROR ${messag
 
 if (!commit) {
   console.log(`Dry run: ${ok.length} ok, ${errors.length} errors. Nothing written; pass --commit to import.`)
-} else if (errors.length > 0) {
-  console.error(`Not importing: ${errors.length} errors`)
+} else if (errors.length > 0 && !skipErrors) {
+  console.error(
+    `Not importing: ${errors.length} errors.` +
+      ' Fix them, or pass --skip-errors to import the rest and add these in /admin.',
+  )
+  process.exit(1)
+} else if (ok.length === 0) {
+  console.error('Nothing to import: no row parsed.')
   process.exit(1)
 } else {
   const db = openDb(dbPath)
   try {
     const { created, updated, preserved } = commitRows(db, createStore(db), ok)
     console.log(`Created ${created}, updated ${updated}`)
+    if (errors.length > 0) {
+      console.log(`Skipped ${errors.length} rows that did not parse; they are listed above.`)
+    }
     if (preserved > 0) {
       console.log(
         `Left ${preserved} alone: moved during the fest, so the sheet's times and venues` +

@@ -322,3 +322,27 @@ test('kho kho ground and the volleyball court are one ground', () => {
   expect(match('Kho Kho Ground')?.placeId).toBe('volleyball_court')
   expect(match('Volley Ball Ground')?.placeId).toBe('volleyball_court')
 })
+
+test('reads the real sheet shape: title row, section headings, one Time column', () => {
+  const sheet = readFileSync(new URL('./fixtures/sheet.csv', import.meta.url), 'utf8')
+  const { ok, errors } = parseScheduleCsv(sheet, { defaultDate: '2026-10-09' })
+
+  // "DAY 1" sits above the header, so the header is not line 1.
+  expect(ok.map((r) => r.input.title)).toEqual(['Innovex', 'Chandrayaan'])
+
+  // Category comes from the "EXPO:" / "Lecture:" headings, which are not events themselves.
+  expect(ok[0].input.category).toBe('other')
+  expect(ok[1].input.category).toBe('talk')
+
+  // One Time column becomes a start and an end.
+  expect(ok[0].input.startAt).toBe('2026-10-09T04:30:00.000Z')
+  expect(ok[0].input.endAt).toBe('2026-10-09T11:30:00.000Z')
+
+  // The hall resolves to its building, with the hall as the room.
+  expect(ok[1].input.placeId).toBe('aryabhatta_park')
+  expect(ok[1].input.room).toBe('Aryabhatta Hall')
+
+  // The untimed row is reported for /admin rather than guessed at.
+  expect(errors).toHaveLength(1)
+  expect(errors[0].message).toMatch(/No usable time.*Add it in \/admin/)
+})
