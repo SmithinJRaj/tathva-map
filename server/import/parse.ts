@@ -4,7 +4,7 @@ import type { EventInput } from '../../shared/schedule.ts'
 import { istDateKey } from '../../shared/ist.ts'
 import { knownPlaces } from '../../shared/places.ts'
 import { COLUMN_MAP, VENUE_ALIASES } from './columns.ts'
-import { matchVenue } from './venues.ts'
+import { matchVenue, suggestVenue } from './venues.ts'
 
 export interface ParseResult {
   ok: { line: number; input: EventInput }[]
@@ -50,7 +50,10 @@ export function parseScheduleCsv(text: string, options: ParseOptions = {}): Pars
     const venueText = cell('venue')
     const venue = matchVenue(venueText, knownPlaces, VENUE_ALIASES)
     if (!venue) {
-      fail(`Unknown venue "${venueText}"`)
+      // Name the near miss: the matcher refuses an uncertain guess, so the human needs to
+      // see what it was refusing before they can correct the sheet.
+      const near = suggestVenue(venueText, knownPlaces)
+      fail(`Unknown venue "${venueText}"${near ? ` — did you mean "${near}"?` : ''}`)
       continue
     }
 

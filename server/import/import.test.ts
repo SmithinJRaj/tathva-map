@@ -150,3 +150,61 @@ test('a missing Category column still parses, as other', () => {
   expect(errors).toEqual([])
   expect(ok[0].input.category).toBe('other')
 })
+
+// These venue strings are all from the real events sheet.
+
+test('a type word is not fuzzed away: a Hall never resolves to a Park', () => {
+  // similarity("aryabhatta hall", "aryabhatta park") is 0.87, comfortably over the
+  // threshold, and they are opposite kinds of place.
+  expect(match('Aryabhatta Hall')).toBeNull()
+  expect(match('aryabhatta park')).toEqual({ placeId: 'aryabhatta_park', room: null })
+})
+
+test('a typo is still forgiven when neither name claims a different kind', () => {
+  expect(match('Open Air Theatr')).toEqual({ placeId: 'open_air_theatre', room: null })
+  expect(match('ECLC')).toEqual({
+    placeId: 'east_campus_lecture_hall_complex_eclhc',
+    room: null,
+  })
+})
+
+test('a venue naming two places is unresolved, not truncated to the first', () => {
+  expect(match('ELHC+Electronics lab')).toBeNull()
+  expect(match('ELHC 302, ELHC 301')).toBeNull()
+})
+
+test('a list of rooms keeps the way it was written', () => {
+  // Re-joining the words gave "101 102 103", which reads as one number.
+  expect(match('ELHC 101,102,103')).toEqual({ placeId: 'elhc', room: '101,102,103' })
+})
+
+test('a lone type word is part of the name, not a room', () => {
+  expect(match('Proshow Ground')).toEqual({ placeId: 'proshow', room: null })
+  expect(match('ABC HALL')).toEqual({ placeId: 'abc_auditorium_complex', room: null })
+})
+
+test('a real location after the place is kept as the room', () => {
+  expect(match('ABC ground floor')).toEqual({
+    placeId: 'abc_auditorium_complex',
+    room: 'ground floor',
+  })
+  expect(match('ELHC 305')).toEqual({ placeId: 'elhc', room: '305' })
+})
+
+test('an indoor room that is its own place still wins over place + room', () => {
+  expect(match('ELHC 301')).toEqual({ placeId: 'elhc_301', room: null })
+})
+
+test('shorthand from the sheet resolves', () => {
+  expect(match('Audi')?.placeId).toBe('auditorium')
+  expect(match('ABC')?.placeId).toBe('abc_auditorium_complex')
+  expect(match('Volley Ball Ground')?.placeId).toBe('volleyball_court')
+})
+
+test('an unknown venue suggests the nearest name rather than just failing', () => {
+  const csv =
+    'Title,Description,Category,Venue,Date,Start,End,Note\nLecture,,talk,Aryabhatta Hall,2027-02-06,10:00,11:00,\n'
+  const { ok, errors } = parseScheduleCsv(csv)
+  expect(ok).toEqual([])
+  expect(errors[0].message).toBe('Unknown venue "Aryabhatta Hall" — did you mean "Aryabhatta Park"?')
+})
