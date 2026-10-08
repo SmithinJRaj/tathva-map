@@ -902,3 +902,125 @@
   display: block;
   color: var(--muted);
 }
+
+/* --- Place search field ------------------------------------------------------------------ */
+
+/* The list hangs off this, so the field needs a positioning context of its own. */
+.field-wrap {
+  position: relative;
+}
+
+.field.is-open {
+  border-color: var(--cyan);
+}
+
+.field input[type='text'] {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--terminal);
+  font-size: 19px;
+  line-height: 1.15;
+}
+
+.field input[type='text']:focus {
+  outline: none;
+}
+
+.field input::placeholder {
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+.field-clear {
+  padding: 0 9px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--terminal);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.field-clear:hover {
+  color: var(--ink);
+}
+
+.field-options {
+  position: absolute;
+  /* .slab is translucent so the map glows through the chrome; a menu sitting on top of that
+     chrome has to be solid, or the panel's own edge reads as a line through the list. */
+  background: var(--void);
+  top: calc(100% + 3px);
+  right: 0;
+  left: 0;
+  z-index: 20;
+  max-height: 46vh;
+  margin: 0;
+  padding: 3px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+}
+
+.field-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 7px;
+  cursor: pointer;
+}
+
+.field-option.is-active {
+  background: var(--panel);
+}
+
+.field-option-name {
+  flex: 1;
+  min-width: 0;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The same key the legend and the outlines use, so a result says what kind of place it is. */
+.field-option-dot {
+  width: 9px;
+  height: 9px;
+  flex-shrink: 0;
+  border: 2px solid var(--void);
+  background: var(--cat-other);
+}
+
+.field-option-dot[data-category='academic'] { background: var(--cat-academic); }
+.field-option-dot[data-category='food'] { background: var(--cat-food); }
+.field-option-dot[data-category='event'] { background: var(--cat-event); }
+.field-option-dot[data-category='amenity'] { background: var(--cat-amenity); }
+
+.field-option-floor {
+  flex-shrink: 0;
+  color: var(--muted);
+}
+
+.field-empty {
+  padding: 8px 7px;
+  color: var(--muted);
+}
+
+/* Narrow, square scrollbar to match the popups. */
+.field-options::-webkit-scrollbar {
+  width: 8px;
+}
+
+.field-options::-webkit-scrollbar-track {
+  background: var(--void);
+}
+
+.field-options::-webkit-scrollbar-thumb {
+  background: var(--violet);
+}

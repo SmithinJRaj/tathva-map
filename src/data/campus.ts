@@ -21,6 +21,8 @@ export interface Place {
   driveNodeId: string | null
   /** Ground level unless this is an indoor place. */
   floor: number
+  /** Extra words that should find this place when searching; never displayed. */
+  aliases?: readonly string[]
   description?: string
   food: PlaceFood[]
   amenities: string[]
@@ -41,6 +43,7 @@ const outdoor: Place[] = generated.places.map((p) => ({
   nodeId: p.nodeId,
   driveNodeId: p.driveNodeId,
   floor: 0,
+  ...('aliases' in p ? { aliases: p.aliases as readonly string[] } : {}),
   ...withContent(festContent[p.id]),
 }))
 

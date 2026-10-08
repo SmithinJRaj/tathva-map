@@ -481,7 +481,9 @@ function buildPlaces(elements, graph) {
       let id = base
       for (let i = 2; usedIds.has(id); i++) id = `${base}_${i}`
       usedIds.add(id)
-      return { id, ...p }
+      // Search-only extra words; `_comment` in the file is not one of them.
+      const aliases = id === '_comment' ? undefined : supplement.aliases?.[id]
+      return aliases ? { id, ...p, aliases } : { id, ...p }
     })
 }
 

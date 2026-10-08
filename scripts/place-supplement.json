@@ -564,5 +564,18 @@
     "East Campus Lecture Hall Complex (ECLHC)": "ECLHC",
     "Center for Career Development": "Centre for Career Development",
     "NIT ground": "Volleyball Court"
+  },
+  "aliases": {
+    "_comment": [
+      "Extra words that should find a place when typing in the From/To fields, for the",
+      "abbreviations people say that are not in the place name itself. Add freely - they",
+      "only widen search, they never change what is displayed."
+    ],
+    "open_air_theatre": [
+      "OAT"
+    ],
+    "techology_business_incubator": [
+      "TBI"
+    ]
   }
 }

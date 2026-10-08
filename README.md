@@ -151,6 +151,12 @@ Worth knowing:
 
 - The opening view frames the **campus**, not the whole image, which runs out into
   Kattangal. `CAMPUS_BOUNDS` comes from the extent of the generated places.
+- **From / To are type-to-search** (`components/PlaceField.tsx`). They were native selects,
+  which are unbeatable for a short list and hopeless for ninety names — you could scroll but
+  not type. Ranking lives in `lib/placeSearch.ts` and is by *how* the query matched, not just
+  whether it did, so "a hos" offers A Hostel before ABC Auditorium Complex. Abbreviations
+  people say that are not in the place name — OAT, TBI — are listed under `aliases` in
+  `scripts/place-supplement.json`; they widen search only and never change what is displayed.
 - **Layers** (bottom left) is both the colour key and a filter — with ninety-odd places on a
   phone, hiding everything but food is what makes the map readable.
 - Routes draw as three lines: a violet halo that reads as glow, a dark casing, and the

@@ -1,9 +1,10 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { CampusMap } from './components/CampusMap'
 import { EventSheet } from './components/EventSheet'
 import { Legend } from './components/Legend'
+import { PlaceField } from './components/PlaceField'
 import { NavPanel } from './components/NavPanel'
-import { placesById, routablePlaces, type PlaceCategory } from './data/campus'
+import { placesById, type PlaceCategory } from './data/campus'
 import { MAP_MOVE, type MapMove } from './config/mapConfig'
 import { useGeolocation } from './hooks/useGeolocation'
 import { useNavigation } from './hooks/useNavigation'
@@ -412,55 +413,6 @@ function ModeButton({
       </svg>
       {children}
     </button>
-  )
-}
-
-function PlaceField({
-  label,
-  value,
-  onChange,
-  allowMyLocation = false,
-}: {
-  label: string
-  value: string | null
-  onChange: (id: string | null) => void
-  allowMyLocation?: boolean
-}) {
-  // Over ninety places read as a wall of names; grouping them makes the list scannable.
-  const groups = useMemo(
-    () =>
-      CATEGORY_ORDER.map((category) => ({
-        category,
-        places: routablePlaces.filter((p) => p.category === category),
-      })).filter((g) => g.places.length > 0),
-    [],
-  )
-
-  return (
-    <label className="field">
-      <span className="field-tag pix-sm" style={{ color: 'var(--muted)' }}>
-        {label}
-      </span>
-      <select value={value ?? ''} onChange={(e) => onChange(e.target.value || null)}>
-        <option value="">Select location…</option>
-        {allowMyLocation && <option value={MY_LOCATION}>My location</option>}
-        {groups.map((group) => (
-          <optgroup key={group.category} label={CATEGORY_LABELS[group.category]}>
-            {group.places.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-                {p.floor > 0 ? ` (floor ${p.floor})` : ''}
-              </option>
-            ))}
-          </optgroup>
-        ))}
-      </select>
-      <span className="field-caret" aria-hidden>
-        <svg viewBox="0 0 10 6" className="h-2 w-3" fill="currentColor">
-          <path d="M0 0h10L5 6z" />
-        </svg>
-      </span>
-    </label>
   )
 }
 

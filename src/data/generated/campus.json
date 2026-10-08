@@ -3449,7 +3449,10 @@
     ]
    ],
    "nodeId": "n7516940988",
-   "driveNodeId": "n7516940988"
+   "driveNodeId": "n7516940988",
+   "aliases": [
+    "OAT"
+   ]
   },
   {
    "id": "pg_block",
@@ -4308,7 +4311,10 @@
     ]
    ],
    "nodeId": "n6811565980",
-   "driveNodeId": "n6811565980"
+   "driveNodeId": "n6811565980",
+   "aliases": [
+    "TBI"
+   ]
   },
   {
    "id": "upper_lh_nit_hostel",
