@@ -2,7 +2,7 @@
 """
 Recolours the campus art into the app's violet night palette.
 
-    python3 scripts/style-basemap.py real_map.jpeg src/assets/map/nitc-campus.png
+    python3 scripts/style-basemap.py real_map.jpeg src/assets/map/nitc-campus.webp
 
 The art is flat-shaded, so a straight colour swap is tempting, but it cannot tell a label
 from a building outline - both are dark - and swapping them together leaves the labels
@@ -38,8 +38,14 @@ BUILDING = ((0x26, 0x18, 0x47), (0x50, 0x3D, 0x79))
 ROAD = ((0x6A, 0x5A, 0x96), (0xB8, 0xA7, 0xE2))
 GREEN = ((0x24, 0x5C, 0x46), (0x47, 0xA8, 0x78))
 
-# Palette size for the saved PNG. Flat art, so this is visually lossless.
+# Palette size when saving PNG. Flat art, so this is visually lossless.
 PALETTE_SIZE = 128
+
+# WebP quality. The art is flat fills and 8px labels, which is where lossy encoding shows
+# first, so this was checked at 4x magnification rather than taken on trust: at 82 the labels
+# are indistinguishable from the PNG and the whole-image RMSE is about 1%. It is worth the
+# care because this one file is roughly three quarters of what a first visit downloads.
+WEBP_QUALITY = 82
 
 # Anything darker than this is type. The darkest thing that is not type is the building
 # outline, at a lightness of about 0.47, so there is plenty of room between them.
@@ -107,9 +113,15 @@ def main():
         out[mask] = lerp(ramp, t)[mask] / 255.0
 
     image = Image.fromarray((np.clip(out, 0, 1) * 255).astype(np.uint8))
-    # The result is a handful of flat fills plus anti-aliasing, so a small palette is
-    # visually lossless and keeps the file under the service worker's 2 MiB precache limit.
-    image.quantize(colors=PALETTE_SIZE, method=Image.Quantize.MEDIANCUT).save(dst, optimize=True)
+    if dst.suffix == ".webp":
+        # No palette step here: quantising before a lossy encoder only gives it banded input
+        # to encode, costing quality without saving bytes. method=6 is the slowest, smallest
+        # setting, which is free when this runs once per art change.
+        image.save(dst, quality=WEBP_QUALITY, method=6)
+    else:
+        # The result is a handful of flat fills plus anti-aliasing, so a small palette is
+        # visually lossless and keeps the file well under the precache size limit.
+        image.quantize(colors=PALETTE_SIZE, method=Image.Quantize.MEDIANCUT).save(dst, optimize=True)
     total = rgb.shape[0] * rgb.shape[1]
     print(f"{src.name} -> {dst}")
     for name, mask in (

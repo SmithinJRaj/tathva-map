@@ -2,7 +2,7 @@ import type L from 'leaflet'
 import type { LatLngTuple } from 'leaflet'
 // The campus art and the data traced onto it are generated together by
 // scripts/build-campus-map.mjs, so the image corners below are exact rather than estimated.
-import mapImageUrl from '../assets/map/nitc-campus.png'
+import mapImageUrl from '../assets/map/nitc-campus.webp'
 import campus from '../data/generated/campus.json'
 
 export const MAP_IMAGE_URL: string = mapImageUrl

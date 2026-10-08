@@ -11,7 +11,7 @@
  *   scripts/cache/basemap-bounds.json  where that art sits on the globe
  *
  * Outputs:
- *   src/assets/map/nitc-campus.png   the art, recoloured to the violet night palette
+ *   src/assets/map/nitc-campus.webp  the art, recoloured to the violet night palette
  *   src/data/generated/campus.json   bounds, places and the walk/drive graph, in image pixels
  *
  * The art is a rendering of OpenStreetMap data, so its buildings are the same shapes in the
@@ -33,7 +33,7 @@ import { fileURLToPath } from 'node:url'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const CACHE = join(ROOT, 'scripts', 'cache', 'osm-raw.json')
-const IMAGE_OUT = join(ROOT, 'src', 'assets', 'map', 'nitc-campus.png')
+const IMAGE_OUT = join(ROOT, 'src', 'assets', 'map', 'nitc-campus.webp')
 const DATA_OUT = join(ROOT, 'src', 'data', 'generated', 'campus.json')
 
 /** The campus art, and the calibration that says where it sits. */

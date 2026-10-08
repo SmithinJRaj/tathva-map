@@ -33,6 +33,7 @@ corners, with everything else drawn on top of it — so the whole thing works of
 | File | Holds |
 | --- | --- |
 | `real_map.jpeg` | The campus art, as supplied (2560 × 1810) |
+| `src/assets/map/nitc-campus.webp` | That art recoloured, and what ships (≈329 KB) |
 | `scripts/calibrate-basemap.py` | Works out where that art sits on the globe |
 | `scripts/style-basemap.py` | Recolours it into the violet night palette |
 | `scripts/trace-art-shapes.py` | Traces outlines off the art for shapes OSM lacks |
@@ -75,6 +76,21 @@ Run it whenever the art changes:
 ```bash
 python3 scripts/calibrate-basemap.py real_map.jpeg
 ```
+
+### Why the basemap is WebP
+
+One file dominates what a visitor downloads. Everything else the app ships is text, which
+the host serves compressed — the main bundle is 505 KB on disk but about 150 KB on the wire.
+The basemap is already-compressed bytes, so what you see is what you send.
+
+As a PNG it was 1,089 KB of a ~1,402 KB first visit: **78% of the download for one file**.
+At WebP quality 82 it is 329 KB, which takes a first visit to about 627 KB. Lossy encoding
+on flat fills and 8 px labels is exactly where artefacts show, so this was checked at 4×
+magnification rather than assumed: the labels are indistinguishable and whole-image RMSE is
+about 1%.
+
+The styled image is encoded straight to WebP without the palette step PNG needs — quantising
+first only hands the lossy encoder banded input, costing quality without saving bytes.
 
 ## Regenerating
 
