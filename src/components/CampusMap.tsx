@@ -15,9 +15,11 @@ import { effectiveCategory, hostPlaceId, placesById, placesWithoutOutline, type 
 import { useRouting } from '../hooks/useRouting'
 import type { RouteResult } from '../lib/astar'
 import type { TravelMode } from '../lib/graph'
+import type { Fix } from '../hooks/useGeolocation'
 import { liveDotPlaces } from '../schedule/liveDots'
 import { useScheduleData } from '../schedule/ScheduleContext'
 import { getPlaceLayer, registerPlaceLayer } from './layerRegistry'
+import { LocationLayer } from './LocationLayer'
 import { endpointIcon, liveDotIcon, placeIcon } from './markers'
 import { PlaceLayer } from './PlaceLayer'
 import { PLANNER_CLEARANCE_PX, SHEET_PEEK_PX } from './sheetSnap'
@@ -40,6 +42,10 @@ interface Props {
   hidden: ReadonlySet<PlaceCategory>
   /** A new token (even for the same place) re-centres the map, so re-scanning a QR still works. */
   focus: { placeId: string; token: number; openPopup: boolean; move: MapMove } | null
+  /** The live position, when the user has granted it. */
+  fix: Fix | null
+  /** Keep the map on the user, and stop re-framing the whole route on every recompute. */
+  navigating: boolean
   onRoute: (route: RouteResult | null) => void
   onRouteTo: (placeId: string) => void
   onZoomControls: (controls: { zoomIn: () => void; zoomOut: () => void } | null) => void
@@ -123,9 +129,11 @@ function RouteLayer({
   startId,
   goalId,
   mode,
+  fix,
+  navigating,
   onRoute,
-}: Pick<Props, 'startId' | 'goalId' | 'mode' | 'onRoute'>) {
-  const route = useRouting(startId, goalId, mode)
+}: Pick<Props, 'startId' | 'goalId' | 'mode' | 'fix' | 'navigating' | 'onRoute'>) {
+  const route = useRouting(startId, goalId, mode, fix, !navigating)
   useEffect(() => onRoute(route), [route, onRoute])
   return null
 }
@@ -174,6 +182,8 @@ export function CampusMap({
   mode,
   hidden,
   focus,
+  fix,
+  navigating,
   onRoute,
   onRouteTo,
   onZoomControls,
@@ -231,11 +241,19 @@ export function CampusMap({
 
       <LiveDots />
       <Endpoints startId={startId} goalId={goalId} />
+      <LocationLayer fix={fix} follow={navigating} />
       <FitMinZoom />
       <ZoomBridge onZoomControls={onZoomControls} />
       <RelaxBoundsWhilePopupOpen />
       <FocusPlace focus={focus} />
-      <RouteLayer startId={startId} goalId={goalId} mode={mode} onRoute={onRoute} />
+      <RouteLayer
+        startId={startId}
+        goalId={goalId}
+        mode={mode}
+        fix={fix}
+        navigating={navigating}
+        onRoute={onRoute}
+      />
       {PolygonTool && (
         <Suspense fallback={null}>
           <PolygonTool active={tracing} onActiveChange={setTracing} />

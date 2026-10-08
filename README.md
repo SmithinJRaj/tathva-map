@@ -172,12 +172,58 @@ Rooms inside buildings (`indoorPlaces` in `festContent.ts`) hang off their build
 junction by a foot-only link whose cost stands in for the climb — stairs are zero metres on
 the ground, so without that a route would call them free.
 
-## Where you are
+## Where you are, and getting there
 
-Scanning a campus QR sets the start: the code carries `?startNode=<place id>` (or a bare
-place id), which is also written to the address bar so a reload or a shared link keeps it.
-Place ids are slugs of OSM names — `elhc`, `main_building`, `nit_calicut_main_gate` — and
-are listed in `src/data/generated/campus.json`.
+Two ways to answer "where am I", because neither is enough on its own.
+
+**Live location.** `useGeolocation` watches `navigator.geolocation`. Three things to know:
+
+- It needs a **secure origin**. `npm run dev -- --host` serves HTTPS for this reason, and any
+  deployment must too, or the browser refuses and the app says so plainly.
+- It needs **permission**, and browsers only grant it off a user gesture the first time.
+  Asking unprompted on first load is how a site gets permanently blocked, so the app waits
+  to be asked. On later visits the Permissions API reports the existing grant and the watch
+  starts on load with no prompt — which is the "by default" part.
+- Once there is a fix, **"From" defaults to your location**, derived rather than stored, so
+  it follows the fix appearing or going away without any state to keep in step.
+
+The dot is drawn with its accuracy circle. That is deliberate: a bare dot implies a precision
+phone GPS does not have, and on a campus this dense someone will trust it into the wrong
+building. Above about 35 m the panel says the signal is weak and gives the figure.
+
+**QR codes** remain the better answer indoors, where GPS is at its worst. Scanning sets the
+start exactly: the code carries `?startNode=<place id>` (or a bare place id), which is also
+written to the address bar so a reload or a shared link keeps it. Place ids are slugs of OSM
+names — `elhc`, `main_building`, `nit_calicut_main_gate` — and are listed in
+`src/data/generated/campus.json`.
+
+### Navigation
+
+Press **Go** with a destination set and the planner is replaced by a turn card: the next
+manoeuvre, the distance to it, the distance remaining, and an ETA at the mode's speed.
+
+A raw fix is not on the path network — GPS drifts further than the paths are apart — so it
+is snapped onto the nearest edge the current mode may use, and the route starts from that
+edge's nearer end. `lib/geo.ts` does that in a local flat frame: over a campus, treating a
+degree as a constant number of metres is accurate to millimetres and turns projection onto a
+segment into ordinary 2-D algebra.
+
+`lib/navigation.ts` turns a route into directions. The graph is a dense chain of OSM shape
+points, so most of its nodes are nothing to tell anyone about; a manoeuvre is only emitted
+where the bearing changes by more than 25°, **and** turns within 20 m of each other are
+merged by summing their angles. Without that merge a mapped path's small jogs produce "turn
+left, turn right, turn left" for what is plainly a straight walk — the 300 m from the main
+gate to the OAT reported eleven manoeuvres before merging and six after.
+
+Because the origin is the live fix, straying **re-routes on its own**: the snapped start node
+changes, A* re-runs, and the new route starts from where you actually are. The off-route
+message only shows when the origin is a fixed place, and needs three consecutive bad fixes
+before it appears, so one reflection off a building does not make the card flap.
+
+Arrival is measured to **where the route ends**, not to the middle of the destination. A
+route can only reach the path outside a building, and that is 23 m from the centre of the OAT
+and 56 m from the centre of the worst building here; measuring to the centre would mean never
+quite arriving.
 
 ## Attribution
 
