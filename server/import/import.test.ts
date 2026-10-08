@@ -289,8 +289,9 @@ test('the three halls are rooms in one building, which has no name of its own', 
 test('labs resolve to their building with the lab as the room', () => {
   expect(match('SSL')).toEqual({ placeId: 'it_lab_complex', room: 'SSL' })
   expect(match('BDL')).toEqual({ placeId: 'central_computer_center', room: 'BDL' })
-  // Three labs across two buildings is not one location.
-  expect(match('SSL. NSL and BDL')).toBeNull()
+  // Three labs across two buildings had no single answer until the user picked one: send
+  // people to the IT Lab Complex, where two of the three are.
+  expect(match('SSL. NSL and BDL')).toEqual({ placeId: 'it_lab_complex', room: null })
 })
 
 test('a venue written as a direction resolves to its landmark', () => {
@@ -306,4 +307,18 @@ test('a direction toward somewhere unknown is still unknown', () => {
   // Stripping the preposition must not make an unplaceable venue look placed.
   expect(match('near dhwani')).toBeNull()
   expect(match('in')).toBeNull()
+})
+
+test('a confirmed multi-place venue resolves; an unconfirmed one still does not', () => {
+  // The guard exists because guessing between two places is dangerous, not because a
+  // mapping someone has checked is dangerous.
+  expect(match('ELHC 301 + ELECTRONICS LAB')).toEqual({ placeId: 'elhc', room: '301' })
+  expect(match('SSL,NSL AND BDL')).toEqual({ placeId: 'it_lab_complex', room: null })
+  expect(match('ELHC+Electronics lab')).toBeNull()
+})
+
+test('kho kho ground and the volleyball court are one ground', () => {
+  // The user's coordinate for it lands 4 m from the Volleyball Court, nothing else within 69.
+  expect(match('Kho Kho Ground')?.placeId).toBe('volleyball_court')
+  expect(match('Volley Ball Ground')?.placeId).toBe('volleyball_court')
 })

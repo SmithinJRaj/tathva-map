@@ -90,13 +90,15 @@ export function matchVenue(
   for (const [id, name] of places) byName.set(normalise(name), id)
   const lookup = (key: string) => byName.get(key) ?? aliases[key]
 
-  // "ELHC+Electronics lab" is two venues, and picking the first would put the event in the
-  // wrong building with a plausible-looking room.
-  if (CONJUNCTIONS.test(text)) return null
+  // Checked before the conjunction guard: a mapping someone has confirmed outranks a rule
+  // that exists only because an unconfirmed guess would be dangerous. This is how
+  // "ELHC 301 + ELECTRONICS LAB" resolves while "ELHC+Electronics lab" still does not.
+  const known = rooms[normalise(text)]
+  if (known) return known
 
-  // A name that is a room on its own ("SSL") carries its building with it.
-  const asRoom = rooms[normalise(text)]
-  if (asRoom) return asRoom
+  // Otherwise a venue naming two places is left for a human: picking the first would put the
+  // event in the wrong building with a plausible-looking room.
+  if (CONJUNCTIONS.test(text)) return null
 
   const tokens = tokenise(text)
   for (let k = tokens.length; k >= 1; k--) {

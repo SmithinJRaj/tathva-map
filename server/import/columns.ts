@@ -45,6 +45,11 @@ export const VENUE_ALIASES: Record<string, string> = {
   // Which of the three halls is unknown, and they share one entrance, so the building is the
   // honest answer rather than a guess at a room.
   amphi: 'green_amphitheatre',
+  // The same patch of ground under another local name: the user's coordinate for it lands
+  // 4 m from the Volleyball Court, with nothing else within 69 m. It is a multi-use ground,
+  // which is also why OSM calls the shape "NIT ground".
+  'kho kho ground': 'volleyball_court',
+  'kho kho': 'volleyball_court',
   'archi dept': 'department_of_architecture_and_plannning',
   'abc hall': 'abc_auditorium_complex',
   aryabatta: 'aryabhatta_park',
@@ -73,7 +78,7 @@ export const AMBIGUOUS_VENUES: readonly string[] = ['ground', 'court', 'lab', 'b
  * the hall, so the hall is a room, and `aryabatta` on its own routes to the building with no
  * room because the building is where you would walk to anyway.
  */
-export const VENUE_ROOMS: Record<string, { placeId: string; room: string }> = {
+export const VENUE_ROOMS: Record<string, { placeId: string; room: string | null }> = {
   ssl: { placeId: 'it_lab_complex', room: 'SSL' },
   nsl: { placeId: 'it_lab_complex', room: 'NSL' },
   bdl: { placeId: 'central_computer_center', room: 'BDL' },
@@ -81,6 +86,16 @@ export const VENUE_ROOMS: Record<string, { placeId: string; room: string }> = {
   'aryabatta hall': { placeId: 'aryabhatta_park', room: 'Aryabhatta Hall' },
   'bhaskara hall': { placeId: 'aryabhatta_park', room: 'Bhaskara Hall' },
   'chanakya hall': { placeId: 'aryabhatta_park', room: 'Chanakya Hall' },
+
+  // Venues naming more than one place, which the conjunction guard refuses by default
+  // because guessing between them is how someone ends up in the wrong building. Each of
+  // these was put to the user and confirmed, so they are knowledge rather than a guess.
+  'elhc 301 electronics lab': { placeId: 'elhc', room: '301' },
+  // "CAMPUS" means the event roams; ELHC 203 is the only part of it that can be pinned.
+  'campus elhc 203': { placeId: 'elhc', room: '203' },
+  // Two of the three labs are in the IT Lab Complex, so that is where to send people.
+  'ssl nsl and bdl': { placeId: 'it_lab_complex', room: null },
+  'ssl nsl': { placeId: 'it_lab_complex', room: null },
 }
 
 /**

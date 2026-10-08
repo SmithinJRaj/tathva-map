@@ -61,3 +61,9 @@ test('dayLabel gives today, listed and unlisted forms', () => {
     delete FEST_DAYS['2026-02-06']
   }
 })
+
+test('the fest days are labelled', () => {
+  expect(dayLabel('2026-10-09', '2026-10-11')).toMatch(/^Day 1/)
+  expect(dayLabel('2026-10-11', '2026-10-11')).toBe('Today')
+  expect(dayLabel('2026-12-25', '2026-10-11')).not.toMatch(/Day/)
+})
