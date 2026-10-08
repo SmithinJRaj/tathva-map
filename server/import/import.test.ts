@@ -5,12 +5,12 @@ import { knownPlaces } from '../../shared/places.ts'
 import { openDb } from '../db.ts'
 import { createStore } from '../store.ts'
 import { commitRows } from './commit.ts'
-import { VENUE_ALIASES } from './columns.ts'
+import { VENUE_ALIASES, VENUE_ROOMS } from './columns.ts'
 import { parseScheduleCsv } from './parse.ts'
 import { matchVenue } from './venues.ts'
 
 const fixture = readFileSync(new URL('./fixtures/sample.csv', import.meta.url), 'utf8')
-const match = (text: string) => matchVenue(text, knownPlaces, VENUE_ALIASES)
+const match = (text: string) => matchVenue(text, knownPlaces, VENUE_ALIASES, VENUE_ROOMS)
 
 test('matchVenue splits a place from its room', () => {
   expect(match('ELHC 305')).toEqual({ placeId: 'elhc', room: '305' })
@@ -153,11 +153,21 @@ test('a missing Category column still parses, as other', () => {
 
 // These venue strings are all from the real events sheet.
 
-test('a type word is not fuzzed away: a Hall never resolves to a Park', () => {
-  // similarity("aryabhatta hall", "aryabhatta park") is 0.87, comfortably over the
-  // threshold, and they are opposite kinds of place.
-  expect(match('Aryabhatta Hall')).toBeNull()
-  expect(match('aryabhatta park')).toEqual({ placeId: 'aryabhatta_park', room: null })
+test('the fuzzy pass refuses a name claiming a different kind of place', () => {
+  // similarity("chanakya hall", "chanakya park") clears the 0.8 threshold while meaning
+  // something else entirely. Checked against a synthetic map so that campus data gaining a
+  // real "... Hall" cannot quietly turn this test into a no-op.
+  const places = new Map([
+    ['a_park', 'Chanakya Park'],
+    ['b_other', 'Somewhere Else'],
+  ])
+  expect(matchVenue('Chanakya Hall', places, {})).toBeNull()
+  // A typo with no competing type word is still forgiven.
+  expect(matchVenue('Chanakya Par', places, {})).toEqual({ placeId: 'a_park', room: null })
+})
+
+test('a real venue that claims the wrong kind stays unresolved', () => {
+  expect(match('Mechanical Park')).toBeNull()
 })
 
 test('a typo is still forgiven when neither name claims a different kind', () => {
@@ -203,10 +213,10 @@ test('shorthand from the sheet resolves', () => {
 
 test('an unknown venue suggests the nearest name rather than just failing', () => {
   const csv =
-    'Title,Description,Category,Venue,Date,Start,End,Note\nLecture,,talk,Aryabhatta Hall,2027-02-06,10:00,11:00,\n'
+    'Title,Description,Category,Venue,Date,Start,End,Note\nTalk,,talk,Mechanical Park,2027-02-06,10:00,11:00,\n'
   const { ok, errors } = parseScheduleCsv(csv)
   expect(ok).toEqual([])
-  expect(errors[0].message).toBe('Unknown venue "Aryabhatta Hall" — did you mean "Aryabhatta Park"?')
+  expect(errors[0].message).toBe('Unknown venue "Mechanical Park" — did you mean "Mechanical Lab"?')
 })
 
 test('re-importing does not undo a change made during the fest', () => {
@@ -264,4 +274,36 @@ test('re-importing still corrects an event nothing has touched', () => {
   expect(after.startAt).toBe('2027-02-06T11:30:00.000Z')
   expect(after.originalStartAt).toBeNull()  // a sheet fix is a correction, not a delay
   db.close()
+})
+
+test('the three halls are rooms in one building, which has no name of its own', () => {
+  // OSM called the building "Aryabhatta Park"; it is a lecture-hall block holding Aryabhatta,
+  // Bhaskara and Chanakya halls, and people enter the building and find the hall inside.
+  expect(match('Aryabhatta Hall')).toEqual({ placeId: 'aryabhatta_park', room: 'Aryabhatta Hall' })
+  expect(match('Bhaskara Hall')).toEqual({ placeId: 'aryabhatta_park', room: 'Bhaskara Hall' })
+  expect(match('Chanakya Hall')).toEqual({ placeId: 'aryabhatta_park', room: 'Chanakya Hall' })
+  // Which hall is unknown here, and all three share one entrance.
+  expect(match('Aryabatta')).toEqual({ placeId: 'aryabhatta_park', room: null })
+})
+
+test('labs resolve to their building with the lab as the room', () => {
+  expect(match('SSL')).toEqual({ placeId: 'it_lab_complex', room: 'SSL' })
+  expect(match('BDL')).toEqual({ placeId: 'central_computer_center', room: 'BDL' })
+  // Three labs across two buildings is not one location.
+  expect(match('SSL. NSL and BDL')).toBeNull()
+})
+
+test('a venue written as a direction resolves to its landmark', () => {
+  // The sheet describes where a volunteer will stand. The landmark is the only part a map
+  // can pin, and pinning it beats failing the row.
+  expect(match('near audi')?.placeId).toBe('auditorium')
+  expect(match('right side of audi')?.placeId).toBe('auditorium')
+  expect(match('in front of pg block')?.placeId).toBe('pg_block')
+  expect(match('Near Amphi')?.placeId).toBe('green_amphitheatre')
+})
+
+test('a direction toward somewhere unknown is still unknown', () => {
+  // Stripping the preposition must not make an unplaceable venue look placed.
+  expect(match('near dhwani')).toBeNull()
+  expect(match('in')).toBeNull()
 })

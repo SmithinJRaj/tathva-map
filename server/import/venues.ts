@@ -49,6 +49,18 @@ function contradicts(a: string, b: string): boolean {
  */
 const CONJUNCTIONS = /[+&]|\bund\b/
 
+/**
+ * Locative prefixes. The sheet is full of venues written as directions — "near audi", "in
+ * front of pg block", "right side of audi" — because that is how a volunteer describes where
+ * they will be standing. The landmark is the only part a map can pin, and pinning it is a
+ * far better answer than failing the row: the attendee walks to the building and looks
+ * around, which is what the phrase was telling them to do anyway.
+ *
+ * Longer phrases come first so "in front of" is not eaten by "in".
+ */
+const LOCATIVE_PREFIX =
+  /^(?:right side of|left side of|in ?front of|front of|next to|side of|near|beside|behind|opposite|outside|inside|at|in)\s+/i
+
 function similarity(a: string, b: string): number {
   const max = Math.max(a.length, b.length)
   if (max === 0) return 1
@@ -104,6 +116,15 @@ export function matchVenue(
     const onlyTypeWord = restTokens.length === 1 && TYPE_WORDS.has(restTokens[0].toLowerCase())
 
     return { placeId, room: rest && !onlyTypeWord ? rest : null }
+  }
+
+  // "near audi" is the auditorium as far as a pin is concerned. Tried before the fuzzy pass
+  // so the landmark wins over some unrelated name that happens to be a near miss, and only
+  // once, so "near near x" cannot loop.
+  const stripped = text.replace(LOCATIVE_PREFIX, '')
+  if (stripped !== text && stripped.trim()) {
+    const landmark = matchVenue(stripped, places, aliases, rooms)
+    if (landmark) return landmark
   }
 
   // Nothing matched outright. Fall back to edit distance, which forgives a typo but must not

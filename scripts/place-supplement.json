@@ -549,6 +549,24 @@
         1106
       ],
       "point": true
+    },
+    {
+      "name": "Central Circle",
+      "category": "amenity",
+      "at": [
+        1006,
+        961
+      ],
+      "point": true
+    },
+    {
+      "name": "Rajpath",
+      "category": "amenity",
+      "at": [
+        866,
+        1091
+      ],
+      "point": true
     }
   ],
   "renames": {

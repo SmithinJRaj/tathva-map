@@ -730,6 +730,18 @@
    "driveNodeId": "n12509584377"
   },
   {
+   "id": "central_circle",
+   "name": "Central Circle",
+   "category": "amenity",
+   "at": [
+    1006,
+    961
+   ],
+   "outline": null,
+   "nodeId": "n539386295",
+   "driveNodeId": "n539386295"
+  },
+  {
    "id": "central_computer_center",
    "name": "Central Computer Center",
    "category": "academic",
@@ -3890,6 +3902,18 @@
    ],
    "nodeId": "n12509565485",
    "driveNodeId": "n12509565485"
+  },
+  {
+   "id": "rajpath",
+   "name": "Rajpath",
+   "category": "amenity",
+   "at": [
+    866,
+    1091
+   ],
+   "outline": null,
+   "nodeId": "n12088311920",
+   "driveNodeId": "n12088311920"
   },
   {
    "id": "ration_shop",

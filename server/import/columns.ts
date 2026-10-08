@@ -42,6 +42,13 @@ export const VENUE_ALIASES: Record<string, string> = {
   'architecture department': 'department_of_architecture_and_plannning',
   'architecture dept': 'department_of_architecture_and_plannning',
   'architechture dept': 'department_of_architecture_and_plannning',
+  // Which of the three halls is unknown, and they share one entrance, so the building is the
+  // honest answer rather than a guess at a room.
+  amphi: 'green_amphitheatre',
+  'archi dept': 'department_of_architecture_and_plannning',
+  'abc hall': 'abc_auditorium_complex',
+  aryabatta: 'aryabhatta_park',
+  aryabhatta: 'aryabhatta_park',
   'football ground': 'nit_football_ground',
   'volleyball court': 'volleyball_court',
   'basketball court': 'basketball_court',
@@ -60,12 +67,20 @@ export const AMBIGUOUS_VENUES: readonly string[] = ['ground', 'court', 'lab', 'b
  * whole string to a place and drops the part that says *which* room, which is the only part
  * that tells someone where to go once they are in the building.
  *
- * Confirmed by the user: SSL and NSL are in the IT Lab Complex, BDL is in the CCC.
+ * Confirmed by the user: SSL and NSL are in the IT Lab Complex, BDL is in the CCC, and
+ * Aryabhatta, Bhaskara and Chanakya are three halls inside one building — the one OSM
+ * named "Aryabhatta Park". The user's own words: people "just enter the building" and find
+ * the hall, so the hall is a room, and `aryabatta` on its own routes to the building with no
+ * room because the building is where you would walk to anyway.
  */
 export const VENUE_ROOMS: Record<string, { placeId: string; room: string }> = {
   ssl: { placeId: 'it_lab_complex', room: 'SSL' },
   nsl: { placeId: 'it_lab_complex', room: 'NSL' },
   bdl: { placeId: 'central_computer_center', room: 'BDL' },
+  'aryabhatta hall': { placeId: 'aryabhatta_park', room: 'Aryabhatta Hall' },
+  'aryabatta hall': { placeId: 'aryabhatta_park', room: 'Aryabhatta Hall' },
+  'bhaskara hall': { placeId: 'aryabhatta_park', room: 'Bhaskara Hall' },
+  'chanakya hall': { placeId: 'aryabhatta_park', room: 'Chanakya Hall' },
 }
 
 /**
