@@ -1,9 +1,9 @@
 import type { LatLngTuple } from 'leaflet'
 import { imagePoint, imageShape } from '../config/mapConfig'
 import generated from './generated/campus.json'
-import { festContent, indoorPlaces, type PlaceContent, type PlaceEvent, type PlaceFood } from './festContent'
+import { festContent, indoorPlaces, type PlaceContent, type PlaceFood } from './festContent'
 
-export type { PlaceEvent, PlaceFood }
+export type { PlaceFood }
 
 export type PlaceCategory = 'academic' | 'food' | 'event' | 'amenity' | 'other'
 
@@ -22,14 +22,12 @@ export interface Place {
   /** Ground level unless this is an indoor place. */
   floor: number
   description?: string
-  events: PlaceEvent[]
   food: PlaceFood[]
   amenities: string[]
 }
 
 const withContent = (content: PlaceContent | undefined) => ({
   description: content?.description,
-  events: content?.events ?? [],
   food: content?.food ?? [],
   amenities: content?.amenities ?? [],
 })
@@ -88,4 +86,16 @@ if (import.meta.env.DEV) {
   if (orphans.length > 0) {
     console.warn(`festContent: no place matches ${orphans.map((o) => `"${o}"`).join(', ')}`)
   }
+}
+
+/** Places hosting a live or upcoming event show as event venues, whatever OpenStreetMap calls them. */
+export function effectiveCategory(place: Place, eventVenueIds: ReadonlySet<string>): PlaceCategory {
+  return eventVenueIds.has(place.id) ? 'event' : place.category
+}
+
+const hostOf = new Map(indoorPlaces.map((room) => [room.id, room.inside]))
+
+/** The building a place is drawn as: an indoor room's host, or the place itself. */
+export function hostPlaceId(placeId: string): string {
+  return hostOf.get(placeId) ?? placeId
 }

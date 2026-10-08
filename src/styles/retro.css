@@ -395,3 +395,115 @@
 .leaflet-marker-icon {
   transition: none;
 }
+
+/* --- Live venues ------------------------------------------------------------------------ */
+
+/* Paths take the glow as an SVG filter; divIcon markers carry the class on their wrapper. */
+.place-live {
+  filter: drop-shadow(0 0 5px rgb(167 139 250 / 0.9)) drop-shadow(0 0 12px rgb(167 139 250 / 0.55));
+}
+
+/* Used when a venue is located from the schedule (three pulses). */
+@keyframes place-pulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 4px var(--violet));
+  }
+  50% {
+    filter: drop-shadow(0 0 18px var(--magenta)) drop-shadow(0 0 28px var(--violet));
+  }
+}
+
+.place-pulse {
+  animation: place-pulse 0.6s ease-in-out 3;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .place-pulse {
+    animation: none;
+  }
+}
+
+/* --- Live / Up next sheet -------------------------------------------------------------- */
+
+.event-sheet {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  max-width: 28rem;
+  margin-inline: auto;
+  transition: height 180ms steps(4);
+}
+
+.event-sheet[data-dragging='true'] {
+  transition: none;
+}
+
+.sheet-strip {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 56px;
+  padding-bottom: 3px;
+}
+
+.sheet-handle {
+  flex: 1;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px 0;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+
+.sheet-grip {
+  width: 36px;
+  height: 4px;
+  background: var(--violet);
+}
+
+.sheet-summary {
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.sheet-attribution {
+  color: var(--muted);
+  text-transform: none;
+  white-space: nowrap;
+}
+
+/* Event rows inherit their type from here, as they do from the popup in a venue's card. */
+.sheet-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 6px 10px 12px;
+  font-family: var(--terminal);
+  font-size: 19px;
+  line-height: 1.15;
+}
+
+.sheet-empty {
+  margin-top: 12px;
+  color: var(--muted);
+}
+
+.sheet-day {
+  margin: 12px 0 4px;
+  color: var(--amber);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .event-sheet {
+    transition: none;
+  }
+}

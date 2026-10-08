@@ -1,7 +1,11 @@
 import type L from 'leaflet'
+import { useEffect } from 'react'
 import { Pane, Polygon, Popup, useMap } from 'react-leaflet'
-import { placesWithOutline, type PlaceCategory } from '../data/campus'
+import { effectiveCategory, placesWithOutline, type PlaceCategory } from '../data/campus'
+import { useScheduleData } from '../schedule/ScheduleContext'
+import { getPlaceLayer, registerPlaceLayer } from './layerRegistry'
 import { PlacePopup } from './PlacePopup'
+import { SHEET_PEEK_PX } from './sheetSnap'
 
 /** Above the map image (250), below the default overlay pane (400) where the route line lives. */
 export const PLACES_PANE = 'places'
@@ -25,6 +29,15 @@ const baseStyle = (color: string): L.PathOptions => ({
   lineJoin: 'miter',
   lineCap: 'butt',
 })
+
+// react-leaflet calls setStyle whenever pathOptions changes identity, which would reset a
+// highlighted polygon on every render. One object per colour keeps identity stable.
+const baseStyles = new Map<string, L.PathOptions>()
+const stableBase = (color: string): L.PathOptions => {
+  let style = baseStyles.get(color)
+  if (!style) baseStyles.set(color, (style = baseStyle(color)))
+  return style
+}
 
 const activeStyle = (color: string): L.PathOptions => ({
   ...baseStyle(color),
@@ -56,24 +69,42 @@ interface Props {
 
 export function PlaceLayer({ interactive, hidden, onRouteTo }: Props) {
   const map = useMap()
+  const { eventVenueIds, liveVenueIds } = useScheduleData()
+
+  // Leaflet reads className only when it creates a path and setStyle never updates it, so
+  // toggle the class on the element directly. Remounting would close an open popup. Runs
+  // after children mount, and again when polygons remount (interactive) or reappear (hidden).
+  useEffect(() => {
+    for (const place of placesWithOutline) {
+      const path = getPlaceLayer(place.id) as L.Polygon | undefined
+      path?.getElement()?.classList.toggle('place-live', liveVenueIds.has(place.id))
+    }
+  }, [liveVenueIds, interactive, hidden, eventVenueIds])
   return (
     <Pane name={PLACES_PANE} style={{ zIndex: 350 }}>
-      {placesWithOutline.filter((p) => !hidden.has(p.category)).map((place) => {
-        const color = CATEGORY_COLORS[place.category]
+      {placesWithOutline.filter((p) => !hidden.has(effectiveCategory(p, eventVenueIds))).map((place) => {
+        const color = CATEGORY_COLORS[effectiveCategory(place, eventVenueIds)]
         return (
           <Polygon
+            ref={(polygon) => {
+              registerPlaceLayer(place.id, polygon)
+              // The effect above can run before the pane has mounted any polygon.
+              polygon?.getElement()?.classList.toggle('place-live', liveVenueIds.has(place.id))
+            }}
             // `interactive` is only read when Leaflet creates the path, so remount on change.
             key={`${place.id}-${interactive}`}
             positions={place.polygon!}
-            pathOptions={baseStyle(color)}
+            pathOptions={stableBase(color)}
             interactive={interactive}
             eventHandlers={{
+              add: (e) =>
+                pathOf(e).getElement()?.classList.toggle('place-live', liveVenueIds.has(place.id)),
               mouseover: (e) => {
                 if (canHover) pathOf(e).setStyle(activeStyle(color))
               },
               mouseout: (e) => {
                 const path = pathOf(e)
-                if (canHover && !path.isPopupOpen()) path.setStyle(baseStyle(color))
+                if (canHover && !path.isPopupOpen()) path.setStyle(stableBase(color))
               },
               popupopen: (e) => {
                 pathOf(e).setStyle(activeStyle(color))
@@ -81,7 +112,7 @@ export function PlaceLayer({ interactive, hidden, onRouteTo }: Props) {
                 // popup layout after rendering its content, which picks this value up.
                 e.popup.options.maxHeight = popupMaxHeight(map)
               },
-              popupclose: (e) => pathOf(e).setStyle(baseStyle(color)),
+              popupclose: (e) => pathOf(e).setStyle(stableBase(color)),
             }}
           >
             {interactive && (
@@ -94,7 +125,7 @@ export function PlaceLayer({ interactive, hidden, onRouteTo }: Props) {
                 minWidth={200}
                 // Keep the popup clear of the From/To panel at the top of the screen.
                 autoPanPaddingTopLeft={[16, 170]}
-                autoPanPaddingBottomRight={[16, 16]}
+                autoPanPaddingBottomRight={[16, 16 + SHEET_PEEK_PX]}
               >
                 <PlacePopup place={place} onRouteTo={onRouteTo} />
               </Popup>

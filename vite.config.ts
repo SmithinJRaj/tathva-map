@@ -6,6 +6,12 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  server: {
+    proxy: { '/api': 'http://127.0.0.1:8787' },
+  },
+  preview: {
+    proxy: { '/api': 'http://127.0.0.1:8787' },
+  },
   plugins: [
     react(),
     tailwindcss(),
@@ -35,6 +41,8 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,webp,ico,webmanifest,woff2}'],
         // The real map art may be large; the 2 MiB default would silently skip precaching it.
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
+        // Never serve the app shell for API or admin URLs.
+        navigateFallbackDenylist: [/^\/api\//, /^\/admin/],
       },
       devOptions: {
         enabled: false,

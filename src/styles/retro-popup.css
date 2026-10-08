@@ -206,3 +206,112 @@
   transform: translate(2px, 2px);
   box-shadow: none;
 }
+
+/* --- Event rows (popup sections and, later, the schedule sheet) ------------------------- */
+
+.retro-events li {
+  padding-left: 0;
+}
+
+.retro-events li::before {
+  content: none;
+}
+
+.event-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+}
+
+button.event-row {
+  cursor: pointer;
+}
+
+button.event-row:hover,
+button.event-row:focus-visible {
+  background: var(--panel-hi);
+}
+
+.event-time {
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  min-width: 3.2em;
+  color: var(--cyan);
+}
+
+.event-time-old {
+  color: var(--muted);
+  font-size: 0.8em;
+}
+
+.event-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.event-title {
+  overflow-wrap: anywhere;
+}
+
+.event-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 6px;
+  color: var(--muted);
+}
+
+.event-note,
+.event-desc {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.event-note {
+  color: var(--amber);
+}
+
+.event-desc {
+  font-size: 0.85em;
+}
+
+.event-chip {
+  padding: 0 4px;
+  border: 2px solid var(--void);
+  background: var(--chip, var(--muted));
+  color: var(--void);
+  font: 7px/1.6 'Press Start 2P', monospace;
+  text-transform: uppercase;
+}
+
+.event-chip[data-category='workshop'] { --chip: var(--cat-academic); }
+.event-chip[data-category='competition'] { --chip: var(--cat-food); }
+.event-chip[data-category='talk'] { --chip: var(--cat-other); }
+.event-chip[data-category='cultural'] { --chip: var(--magenta); }
+.event-chip[data-category='proshow'] { --chip: var(--cat-event); }
+
+.event-status {
+  font: 7px/1.6 'Press Start 2P', monospace;
+  text-transform: uppercase;
+}
+
+.event-status[data-tone='live'] { color: var(--green); }
+.event-status[data-tone='delayed'] { color: var(--amber); }
+.event-status[data-tone='early'] { color: var(--cyan); }
+.event-status[data-tone='cancelled'] { color: var(--red); }
+
+.event-row.is-cancelled {
+  opacity: 0.55;
+}
+
+.event-row.is-cancelled .event-title {
+  text-decoration: line-through;
+}
