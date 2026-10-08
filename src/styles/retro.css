@@ -963,6 +963,9 @@
   margin: 0;
   padding: 3px;
   overflow-y: auto;
+  /* Say what the gesture is, so a vertical drag scrolls instead of being claimed by
+     anything else, and keep the scroll from chaining out to the map behind. */
+  touch-action: pan-y;
   overscroll-behavior: contain;
   list-style: none;
 }

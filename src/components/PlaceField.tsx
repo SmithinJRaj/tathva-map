@@ -164,12 +164,16 @@ export function PlaceField({ label, value, onChange, allowMyLocation = false }: 
                 role="option"
                 aria-selected={i === active}
                 className={`field-option ${i === active ? 'is-active' : ''}`}
-                // pointerdown, not click: the input's blur would close the list first.
-                onPointerDown={(e) => {
-                  e.preventDefault()
-                  choose(option)
-                }}
-                onPointerEnter={() => setActive(i)}
+                // Click, not pointerdown. A touch scroll *starts* with a pointerdown on
+                // whichever row is under the finger, so selecting there made the list
+                // impossible to scroll — and preventDefault on it cancelled the browser's
+                // scroll gesture outright. Click fires only for a tap. Nothing is lost by
+                // waiting: the list closes from the document listener below, which ignores
+                // anything inside this component, so a click on a row never races it shut.
+                onClick={() => choose(option)}
+                // Mouse, not pointer: a pointerenter fires while a finger drags past rows
+                // and would drag the highlight along with the scroll.
+                onMouseEnter={() => setActive(i)}
               >
                 <span className="field-option-dot" data-category={option.category} aria-hidden />
                 <span className="term field-option-name">{option.name}</span>
