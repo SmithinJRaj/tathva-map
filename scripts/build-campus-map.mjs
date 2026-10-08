@@ -474,17 +474,37 @@ function buildPlaces(elements, graph) {
   }))
 
   const usedIds = new Set()
-  return renamed
+  const overridesUsed = new Set()
+  const aliasesUsed = new Set()
+  const result = renamed
     .sort((a, b) => a.name.localeCompare(b.name))
     .map(({ idSource, ...p }) => {
       const base = slug(idSource) || 'place'
-      let id = base
-      for (let i = 2; usedIds.has(id); i++) id = `${base}_${i}`
+      let id = supplement.ids?.[base] ?? base
+      if (id !== base) overridesUsed.add(base)
+      for (let i = 2; usedIds.has(id); i++) id = `${id}_${i}`
       usedIds.add(id)
       // Search-only extra words; `_comment` in the file is not one of them.
-      const aliases = id === '_comment' ? undefined : supplement.aliases?.[id]
+      const aliases = supplement.aliases?.[id]
+      if (aliases) aliasesUsed.add(id)
       return aliases ? { id, ...p, aliases } : { id, ...p }
     })
+
+  // An override that matched nothing means the upstream name moved under it. Say so, or the
+  // id quietly reverts to the generated one and whatever imported it breaks instead.
+  for (const key of Object.keys(supplement.ids ?? {})) {
+    if (key !== '_comment' && !overridesUsed.has(key)) {
+      console.warn(`  ids: override "${key}" matched no generated id`)
+    }
+  }
+  // Same hazard: an alias keyed by an id that no longer exists just stops widening search,
+  // with nothing to notice it. Renaming an id silently dropped the TBI alias once already.
+  for (const key of Object.keys(supplement.aliases ?? {})) {
+    if (key !== '_comment' && !aliasesUsed.has(key)) {
+      console.warn(`  aliases: "${key}" matches no place`)
+    }
+  }
+  return result
 }
 
 // --- Main ------------------------------------------------------------------------------

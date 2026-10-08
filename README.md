@@ -118,8 +118,12 @@ Three cases, handled in order by `scripts/place-supplement.json`:
 - **OSM has it under a different name.** Add a `renames` entry. The art's label is what
   people on campus actually say.
 
-Place **ids keep following the original OSM name**, not the renamed one, because ids are
-printed on QR codes around campus — a nicer label must never silently invalidate a poster.
+Place **ids keep following the original OSM name**, not the renamed one: a nicer display
+label must never silently change an id, because ids are what shared links and the schedule
+service key on. Where OSM's name makes an id actively misleading, override it explicitly in
+the `ids` map — `nit_ground` meant the Volleyball Court, which anyone would read as the
+football ground. An override, or an alias, that matches nothing is a build warning rather
+than a silent no-op; renaming an id dropped an alias exactly that way once.
 
 ### Dropping in different art
 

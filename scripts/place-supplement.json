@@ -574,8 +574,20 @@
     "open_air_theatre": [
       "OAT"
     ],
-    "techology_business_incubator": [
+    "technology_business_incubator": [
       "TBI"
     ]
+  },
+  "ids": {
+    "_comment": [
+      "Overrides for generated place ids, keyed by the id the generator would produce.",
+      "Ids come from the ORIGINAL OpenStreetMap name so that a nicer display label never",
+      "silently changes one; that is right until OSM carries a name nobody would guess the",
+      "id from, and then it needs saying explicitly.",
+      "An override that matches nothing is a build warning, not a silent no-op, so an",
+      "upstream rename surfaces instead of quietly reverting the id."
+    ],
+    "nit_ground": "volleyball_court",
+    "techology_business_incubator": "technology_business_incubator"
   }
 }
