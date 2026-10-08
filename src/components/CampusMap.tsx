@@ -40,7 +40,7 @@ interface Props {
   goalId: string | null
   mode: TravelMode
   hidden: ReadonlySet<PlaceCategory>
-  /** A new token (even for the same place) re-centres the map, so re-scanning a QR still works. */
+  /** A new token (even for the same place) re-centres the map, so picking it twice still moves. */
   focus: { placeId: string; token: number; openPopup: boolean; move: MapMove } | null
   /** The live position, when the user has granted it. */
   fix: Fix | null

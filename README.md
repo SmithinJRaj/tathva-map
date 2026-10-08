@@ -208,8 +208,6 @@ the ground, so without that a route would call them free.
 
 ## Where you are, and getting there
 
-Two ways to answer "where am I", because neither is enough on its own.
-
 **Live location.** `useGeolocation` watches `navigator.geolocation`. Three things to know:
 
 - It needs a **secure origin**. `npm run dev -- --host` serves HTTPS for this reason, and any
@@ -232,13 +230,19 @@ answer. Snapping that onto the campus network would put the user at whichever co
 map lies toward it and point every route outbound, which is worse than admitting we do not
 know. So a fix more than a quarter of the map's span outside it, or with an accuracy circle
 wider than 250 m, is treated as no fix at all: no dot, no "My location" origin, and the
-planner says why. This is also when QR codes earn their keep.
+planner says why.
 
-**QR codes** remain the better answer indoors, where GPS is at its worst. Scanning sets the
-start exactly: the code carries `?startNode=<place id>` (or a bare place id), which is also
-written to the address bar so a reload or a shared link keeps it. Place ids are slugs of OSM
-names — `elhc`, `main_building`, `nit_calicut_main_gate` — and are listed in
-`src/data/generated/campus.json`.
+**There is no fallback for that case.** The in-app QR scanner used to be one — scanning a
+code on a wall set the start exactly, with no satellites involved — and it was removed when
+the fest dropped QR codes. So indoors, where GPS is worst, the honest answer is that the app
+does not know where you are and says so; you pick your starting point from the list. If
+printed codes ever come back, the cheapest route is a plain URL rather than a scanner (see
+below) — it costs nothing to ship and the phone's own camera opens it.
+
+**Arriving at a place by link.** `?startNode=<place id>` still sets the start on load, which
+is what makes a shared link, or a printed code opened by the phone's own camera, land on the
+right place. Place ids are slugs of OSM names — `elhc`, `main_building`,
+`nit_calicut_main_gate` — and are listed in `src/data/generated/campus.json`.
 
 ### Navigation
 

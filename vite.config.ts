@@ -15,7 +15,8 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    // Self-signed HTTPS for `npm run dev -- --host`: phones only expose the camera on secure origins.
+    // Self-signed HTTPS for `npm run dev -- --host`: browsers only hand over a location on
+    // a secure origin, so testing on a phone over the LAN needs this.
     basicSsl(),
     VitePWA({
       registerType: 'autoUpdate',

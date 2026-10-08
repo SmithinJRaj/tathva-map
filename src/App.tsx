@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { CampusMap } from './components/CampusMap'
 import { EventSheet } from './components/EventSheet'
 import { Legend } from './components/Legend'
@@ -16,13 +16,8 @@ import type { RouteResult } from './lib/astar'
 import type { TravelMode } from './lib/graph'
 import { readEventIdFromUrl, withoutEventParam } from './lib/eventLink'
 import { useLiteMode } from './lib/liteMode'
-import { parseScannedNode, readStartNodeFromUrl, writeStartNodeToUrl } from './lib/startNode'
+import { readStartNodeFromUrl } from './lib/startNode'
 import { useScheduleData } from './schedule/ScheduleContext'
-
-// html5-qrcode is large; load it only when the scanner opens (still precached for offline).
-const QrScannerOverlay = lazy(() =>
-  import('./components/QrScannerOverlay').then((m) => ({ default: m.QrScannerOverlay })),
-)
 
 const CATEGORY_LABELS: Record<PlaceCategory, string> = {
   event: 'Events',
@@ -50,7 +45,6 @@ function App() {
   )
   const [route, setRoute] = useState<RouteResult | null>(null)
   const [zoom, setZoom] = useState<ZoomControls>(null)
-  const [scanning, setScanning] = useState(false)
   const [navigationRequested, setNavigationRequested] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
 
@@ -82,19 +76,6 @@ function App() {
     setToast(msg)
     window.setTimeout(() => setToast(null), 2500)
   }
-
-  const handleScan = useCallback((text: string) => {
-    setScanning(false)
-    const id = parseScannedNode(text)
-    if (!id) {
-      showToast('Unrecognised QR code')
-      return
-    }
-    setStartId(id)
-    setFocus((f) => ({ placeId: id, token: (f?.token ?? 0) + 1, openPopup: false, move }))
-    writeStartNodeToUrl(id)
-    showToast(`You are at ${placesById.get(id)!.name}`)
-  }, [move])
 
   const handleLocate = useCallback(
     (placeId: string) => {
@@ -338,7 +319,7 @@ function App() {
         onLiteChange={setLite}
       />
 
-      {/* --- Zoom + scan -------------------------------------------------------------- */}
+      {/* --- Zoom ---------------------------------------------------------------------- */}
       <div
         className="absolute right-3 z-[1000] flex flex-col items-end gap-2"
         style={{ bottom: 'calc(56px + 20px)' }}
@@ -358,12 +339,6 @@ function App() {
             </button>
           </div>
         )}
-        <button type="button" className="btn btn-primary" onClick={() => setScanning(true)}>
-          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <path d="M3 7V4a1 1 0 0 1 1-1h3M17 3h3a1 1 0 0 1 1 1v3M21 17v3a1 1 0 0 1-1 1h-3M7 21H4a1 1 0 0 1-1-1v-3M7 12h10" />
-          </svg>
-          Scan QR
-        </button>
       </div>
 
       <EventSheet onLocate={handleLocate} />
@@ -375,12 +350,6 @@ function App() {
         >
           {toast}
         </div>
-      )}
-
-      {scanning && (
-        <Suspense fallback={null}>
-          <QrScannerOverlay onScan={handleScan} onClose={() => setScanning(false)} />
-        </Suspense>
       )}
     </div>
   )
