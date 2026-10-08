@@ -130,4 +130,10 @@ export const festVenues: FestVenue[] = [
     at: 'nit_football_ground',
     content: { description: 'Held on the NITC Football Ground.' },
   },
+  {
+    id: 'informals_stage',
+    name: 'Informals Stage',
+    at: 'atm_circle',
+    content: { description: 'The Informals stage, in the ATM circle.' },
+  },
 ]

@@ -72,6 +72,7 @@ export function matchVenue(
   text: string,
   places: ReadonlyMap<string, string>,
   aliases: Record<string, string>,
+  rooms: Record<string, VenueMatch> = {},
 ): VenueMatch | null {
   const byName = new Map<string, string>()
   for (const [id, name] of places) byName.set(normalise(name), id)
@@ -80,6 +81,10 @@ export function matchVenue(
   // "ELHC+Electronics lab" is two venues, and picking the first would put the event in the
   // wrong building with a plausible-looking room.
   if (CONJUNCTIONS.test(text)) return null
+
+  // A name that is a room on its own ("SSL") carries its building with it.
+  const asRoom = rooms[normalise(text)]
+  if (asRoom) return asRoom
 
   const tokens = tokenise(text)
   for (let k = tokens.length; k >= 1; k--) {

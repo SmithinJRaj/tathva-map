@@ -66,8 +66,14 @@ if (!commit) {
 } else {
   const db = openDb(dbPath)
   try {
-    const { created, updated } = commitRows(db, createStore(db), ok)
+    const { created, updated, preserved } = commitRows(db, createStore(db), ok)
     console.log(`Created ${created}, updated ${updated}`)
+    if (preserved > 0) {
+      console.log(
+        `Left ${preserved} alone: moved during the fest, so the sheet's times and venues` +
+          ' were not put back. Edit those in /admin.',
+      )
+    }
   } catch (err) {
     console.error(`Import failed, nothing was written: ${err instanceof Error ? err.message : String(err)}`)
     process.exit(1)

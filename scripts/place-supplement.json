@@ -540,6 +540,15 @@
         ]
       ],
       "outlineSource": "traced from art (building)"
+    },
+    {
+      "name": "ATM Circle",
+      "category": "amenity",
+      "at": [
+        1150,
+        1106
+      ],
+      "point": true
     }
   ],
   "renames": {

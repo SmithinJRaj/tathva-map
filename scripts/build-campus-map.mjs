@@ -330,8 +330,10 @@ function supplementalPlaces(elements, graph, drivableNodes) {
   for (const entry of file.places) {
     // OSM geometry first; it is surveyed. An outline in the file is the fallback, traced off
     // the art by scripts/trace-art-shapes.py for the shapes OSM simply does not have.
-    const host = entry.outline ? null : candidates.find((c) => ringContains(c.ring, entry.at))
-    if (!host && !entry.outline) {
+    // `point: true` says the thing has no footprint by nature - a junction, a stage - so a
+    // missing shape is the expected answer rather than something to report.
+    const host = entry.outline || entry.point ? null : candidates.find((c) => ringContains(c.ring, entry.at))
+    if (!host && !entry.outline && !entry.point) {
       console.warn(`  supplement: no shape for "${entry.name}" at ${entry.at}`)
     }
     const ring = host ? host.ring.slice() : (entry.outline ?? null)

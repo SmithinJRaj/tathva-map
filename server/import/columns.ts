@@ -54,3 +54,33 @@ export const VENUE_ALIASES: Record<string, string> = {
  * wrong end of campus. An unknown venue is a loud import error; a wrong one is silent.
  */
 export const AMBIGUOUS_VENUES: readonly string[] = ['ground', 'court', 'lab', 'block']
+
+/**
+ * Venue text that names a room rather than a place. An alias cannot express these: it maps a
+ * whole string to a place and drops the part that says *which* room, which is the only part
+ * that tells someone where to go once they are in the building.
+ *
+ * Confirmed by the user: SSL and NSL are in the IT Lab Complex, BDL is in the CCC.
+ */
+export const VENUE_ROOMS: Record<string, { placeId: string; room: string }> = {
+  ssl: { placeId: 'it_lab_complex', room: 'SSL' },
+  nsl: { placeId: 'it_lab_complex', room: 'NSL' },
+  bdl: { placeId: 'central_computer_center', room: 'BDL' },
+}
+
+/**
+ * The sheet groups rows under section headers ("EXPO:", "Informals:") instead of carrying a
+ * Category column. Settled with the user; PC is the Program Committee and GPC the Gaming
+ * Program Committee, whose go-kart and paintball read as attractions rather than contests.
+ */
+export const SECTION_CATEGORIES: Record<string, string> = {
+  expo: 'other',
+  'tech conclave': 'talk',
+  informals: 'cultural',
+  wheels: 'other',
+  pc: 'competition',
+  lecture: 'talk',
+  gpc: 'other',
+  tedex: 'talk',
+  proshow: 'proshow',
+}

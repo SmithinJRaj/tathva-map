@@ -3,7 +3,7 @@ import { fieldErrors, eventInputSchema } from '../../shared/schedule.ts'
 import type { EventInput } from '../../shared/schedule.ts'
 import { istDateKey } from '../../shared/ist.ts'
 import { knownPlaces } from '../../shared/places.ts'
-import { COLUMN_MAP, VENUE_ALIASES } from './columns.ts'
+import { COLUMN_MAP, VENUE_ALIASES, VENUE_ROOMS } from './columns.ts'
 import { matchVenue, suggestVenue } from './venues.ts'
 
 export interface ParseResult {
@@ -48,7 +48,7 @@ export function parseScheduleCsv(text: string, options: ParseOptions = {}): Pars
     const fail = (message: string) => result.errors.push({ line, message })
 
     const venueText = cell('venue')
-    const venue = matchVenue(venueText, knownPlaces, VENUE_ALIASES)
+    const venue = matchVenue(venueText, knownPlaces, VENUE_ALIASES, VENUE_ROOMS)
     if (!venue) {
       // Name the near miss: the matcher refuses an uncertain guess, so the human needs to
       // see what it was refusing before they can correct the sheet.

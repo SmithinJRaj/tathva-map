@@ -384,6 +384,18 @@
    "driveNodeId": "n12088311927"
   },
   {
+   "id": "atm_circle",
+   "name": "ATM Circle",
+   "category": "amenity",
+   "at": [
+    1150,
+    1106
+   ],
+   "outline": null,
+   "nodeId": "n6347654646",
+   "driveNodeId": "n6347654646"
+  },
+  {
    "id": "atm_complex_sbi_bob",
    "name": "ATM Complex (SBI,BOB)",
    "category": "amenity",

@@ -62,8 +62,8 @@ test('importing the same rows twice updates instead of duplicating', () => {
   const db = openDb(':memory:')
   const store = createStore(db)
   const { ok } = parseScheduleCsv(fixture)
-  expect(commitRows(db, store, ok)).toEqual({ created: 3, updated: 0 })
-  expect(commitRows(db, store, ok)).toEqual({ created: 0, updated: 3 })
+  expect(commitRows(db, store, ok)).toEqual({ created: 3, updated: 0, preserved: 0 })
+  expect(commitRows(db, store, ok)).toEqual({ created: 0, updated: 3, preserved: 0 })
   expect(store.list()).toHaveLength(ok.length)
 })
 
@@ -207,4 +207,61 @@ test('an unknown venue suggests the nearest name rather than just failing', () =
   const { ok, errors } = parseScheduleCsv(csv)
   expect(ok).toEqual([])
   expect(errors[0].message).toBe('Unknown venue "Aryabhatta Hall" — did you mean "Aryabhatta Park"?')
+})
+
+test('re-importing does not undo a change made during the fest', () => {
+  const db = openDb(':memory:')
+  const store = createStore(db)
+  const row = (start: string, end: string) => ({
+    input: {
+      title: 'Robowars', description: null, category: 'competition' as const,
+      placeId: 'mechanical_lab', room: null,
+      startAt: start, endAt: end, note: null,
+    },
+  })
+  const sheet = row('2027-02-06T08:30:00.000Z', '2027-02-06T10:30:00.000Z')
+
+  expect(commitRows(db, store, [sheet])).toMatchObject({ created: 1, updated: 0, preserved: 0 })
+  const [created] = store.list()
+
+  // The bridge delays it an hour and moves it, as a WhatsApp message would.
+  store.edit(
+    created.id,
+    {
+      startAt: '2027-02-06T09:30:00.000Z',
+      endAt: '2027-02-06T11:30:00.000Z',
+      placeId: 'elhc',
+      note: 'Delayed one hour',
+      updatedAt: created.updatedAt,
+    },
+    'whatsapp-bot',
+  )
+
+  // The sheet syncs again, still carrying the original time.
+  expect(commitRows(db, store, [sheet])).toMatchObject({ created: 0, updated: 0, preserved: 1 })
+
+  const [after] = store.list()
+  expect(after.startAt).toBe('2027-02-06T09:30:00.000Z')   // the live time survives
+  expect(after.placeId).toBe('elhc')                        // so does the live venue
+  expect(after.originalStartAt).toBe('2027-02-06T08:30:00.000Z') // still shows as moved
+  expect(after.note).toBe(null)                             // the sheet still owns the rest
+  db.close()
+})
+
+test('re-importing still corrects an event nothing has touched', () => {
+  const db = openDb(':memory:')
+  const store = createStore(db)
+  const make = (start: string) => ({
+    input: {
+      title: 'Quiz', description: null, category: 'talk' as const,
+      placeId: 'nlhc', room: null,
+      startAt: start, endAt: '2027-02-06T12:30:00.000Z', note: null,
+    },
+  })
+  commitRows(db, store, [make('2027-02-06T10:30:00.000Z')])
+  expect(commitRows(db, store, [make('2027-02-06T11:30:00.000Z')])).toMatchObject({ updated: 1, preserved: 0 })
+  const [after] = store.list()
+  expect(after.startAt).toBe('2027-02-06T11:30:00.000Z')
+  expect(after.originalStartAt).toBeNull()  // a sheet fix is a correction, not a delay
+  db.close()
 })
