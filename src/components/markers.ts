@@ -23,6 +23,24 @@ export function placeIcon(category: PlaceCategory, live = false): L.DivIcon {
   return icon
 }
 
+/**
+ * The red beacon over a venue with something live. Anchored below and left of its centre so it
+ * sits up and to the right of the point, clear of the building's label or a point venue's pin.
+ */
+export function liveDotIcon(): L.DivIcon {
+  let icon = cache.get('live-dot')
+  if (!icon) {
+    icon = L.divIcon({
+      className: 'live-beacon-icon',
+      html: '<span class="live-beacon"></span>',
+      iconSize: [10, 10],
+      iconAnchor: [-6, 16],
+    })
+    cache.set('live-dot', icon)
+  }
+  return icon
+}
+
 /** The labelled flag for the two ends of a route. */
 export function endpointIcon(kind: 'start' | 'goal'): L.DivIcon {
   const key = `end:${kind}`

@@ -1,5 +1,5 @@
 import L from 'leaflet'
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { ImageOverlay, MapContainer, Marker, Pane, Popup, useMap, useMapEvents } from 'react-leaflet'
 import {
   CAMPUS_BOUNDS,
@@ -15,9 +15,10 @@ import { effectiveCategory, hostPlaceId, placesById, placesWithoutOutline, type 
 import { useRouting } from '../hooks/useRouting'
 import type { RouteResult } from '../lib/astar'
 import type { TravelMode } from '../lib/graph'
+import { liveDotPlaces } from '../schedule/liveDots'
 import { useScheduleData } from '../schedule/ScheduleContext'
 import { getPlaceLayer, registerPlaceLayer } from './layerRegistry'
-import { endpointIcon, placeIcon } from './markers'
+import { endpointIcon, liveDotIcon, placeIcon } from './markers'
 import { PlaceLayer } from './PlaceLayer'
 import { PLANNER_CLEARANCE_PX, SHEET_PEEK_PX } from './sheetSnap'
 import { PlacePopup } from './PlacePopup'
@@ -129,6 +130,22 @@ function RouteLayer({
   return null
 }
 
+/**
+ * A pulsing red beacon on every venue with an event on right now. Purely a signal: it takes no
+ * clicks, so a tap on it still reaches the building or pin underneath and opens its popup.
+ */
+function LiveDots() {
+  const { liveVenueIds } = useScheduleData()
+  const dots = useMemo(() => liveDotPlaces(liveVenueIds), [liveVenueIds])
+  return (
+    <Pane name="liveDots" style={{ zIndex: 640, pointerEvents: 'none' }}>
+      {dots.map((dot) => (
+        <Marker key={dot.id} position={dot.position} icon={liveDotIcon()} interactive={false} />
+      ))}
+    </Pane>
+  )
+}
+
 /** The labelled YOU / GOAL flags, which sit above every other pin. */
 function Endpoints({ startId, goalId }: Pick<Props, 'startId' | 'goalId'>) {
   const ends = [
@@ -212,6 +229,7 @@ export function CampusMap({
           </Marker>
         ))}
 
+      <LiveDots />
       <Endpoints startId={startId} goalId={goalId} />
       <FitMinZoom />
       <ZoomBridge onZoomControls={onZoomControls} />
