@@ -191,6 +191,15 @@ The dot is drawn with its accuracy circle. That is deliberate: a bare dot implie
 phone GPS does not have, and on a campus this dense someone will trust it into the wrong
 building. Above about 35 m the panel says the signal is weak and gives the figure.
 
+**A fix is vetted before the app acts on it** (`fixProblem` in `lib/geo.ts`). Indoors, with no
+satellites and no known wifi, a phone falls back to locating by IP address, which lands on
+the network's exchange — often a different district, and every map app shows the same wrong
+answer. Snapping that onto the campus network would put the user at whichever corner of the
+map lies toward it and point every route outbound, which is worse than admitting we do not
+know. So a fix more than a quarter of the map's span outside it, or with an accuracy circle
+wider than 250 m, is treated as no fix at all: no dot, no "My location" origin, and the
+planner says why. This is also when QR codes earn their keep.
+
 **QR codes** remain the better answer indoors, where GPS is at its worst. Scanning sets the
 start exactly: the code carries `?startNode=<place id>` (or a bare place id), which is also
 written to the address bar so a reload or a shared link keeps it. Place ids are slugs of OSM

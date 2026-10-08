@@ -6,6 +6,7 @@
 // accurate to a few millimetres, and it turns projection onto a segment into ordinary
 // two-dimensional algebra.
 
+import { MAP_BOUNDS } from '../config/mapConfig'
 import { graph, allowsMode, type GraphEdge, type TravelMode } from './graph'
 
 export interface LatLng {
@@ -152,4 +153,57 @@ export function locateOnPath(path: readonly LatLng[], fix: LatLng): PathProgress
     }
   }
   return best
+}
+
+// --- Is this fix worth believing? --------------------------------------------------------
+
+/**
+ * Why a fix cannot be used, or null when it can.
+ *
+ * `off-map`    the device thinks it is somewhere else entirely. Indoors, with no satellites
+ *              and no known wifi, a phone falls back to locating by IP address, which lands
+ *              on the network's exchange - often a different district. Google Maps shows the
+ *              same thing. Snapping that onto the campus network would put the user at
+ *              whichever corner of the map lies toward it and send every route outbound,
+ *              which is worse than admitting we do not know.
+ * `too-coarse` the position may be right but the circle is wider than the campus is
+ *              interesting, so it cannot say which building you are at.
+ */
+export type FixProblem = 'off-map' | 'too-coarse' | null
+
+/**
+ * Fixes further outside the mapped area than this are refused. A quarter of the map's own
+ * span is wide enough to keep someone walking in from the main road, and far too tight to
+ * admit the next district.
+ */
+const OFF_MAP_PAD = 0.25
+
+/**
+ * Beyond this the fix cannot pick a building out of the campus, so it is not worth drawing.
+ * Deliberately loose: a genuine satellite fix beside a building can be 50-100 m, and that is
+ * still useful, while an IP-derived one is usually thousands.
+ */
+const MAX_USEFUL_ACCURACY_M = 250
+
+const [[SOUTH, WEST], [NORTH, EAST]] = MAP_BOUNDS
+const LAT_PAD = (NORTH - SOUTH) * OFF_MAP_PAD
+const LNG_PAD = (EAST - WEST) * OFF_MAP_PAD
+
+export function fixProblem(fix: LatLng & { accuracy: number }): FixProblem {
+  if (
+    fix.lat < SOUTH - LAT_PAD ||
+    fix.lat > NORTH + LAT_PAD ||
+    fix.lng < WEST - LNG_PAD ||
+    fix.lng > EAST + LNG_PAD
+  ) {
+    return 'off-map'
+  }
+  if (fix.accuracy > MAX_USEFUL_ACCURACY_M) return 'too-coarse'
+  return null
+}
+
+/** What to tell the user about an unusable fix. */
+export const FIX_PROBLEM_MESSAGE: Record<Exclude<FixProblem, null>, string> = {
+  'off-map': 'Location unavailable — your device places you off campus',
+  'too-coarse': 'Location unavailable — signal too weak to place you',
 }

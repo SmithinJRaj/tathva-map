@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { bearing, distance, locateOnPath, projectOnSegment, turnAngle } from './geo'
+import { bearing, distance, fixProblem, locateOnPath, projectOnSegment, turnAngle } from './geo'
 import { buildSteps, navigate, offRouteThreshold } from './navigation'
 
 // A tiny grid near the campus. At this latitude a ten-thousandth of a degree of latitude is
@@ -166,5 +166,34 @@ describe('buildSteps: merging close manoeuvres', () => {
   it('still reports turns that are genuinely far apart', () => {
     const steps = buildSteps([O, east(100), at(100, 100), at(200, 100)])
     expect(steps.map((s) => s.manoeuvre)).toEqual(['start', 'left', 'right', 'arrive'])
+  })
+})
+
+describe('fixProblem', () => {
+  const onCampus = { lat: 11.3215, lng: 75.9342 }
+
+  it('accepts a decent fix on campus', () => {
+    expect(fixProblem({ ...onCampus, accuracy: 10 })).toBeNull()
+    expect(fixProblem({ ...onCampus, accuracy: 90 })).toBeNull()
+  })
+
+  it('still accepts someone walking in from just off the edge', () => {
+    // A little north of the mapped area, inside the quarter-span margin.
+    expect(fixProblem({ lat: 11.3255, lng: 75.9342, accuracy: 20 })).toBeNull()
+  })
+
+  it('refuses a fix in another town', () => {
+    // Kozhikode city centre, roughly where an IP-derived fix lands from campus.
+    expect(fixProblem({ lat: 11.2588, lng: 75.7804, accuracy: 30 })).toBe('off-map')
+    expect(fixProblem({ lat: 11.34, lng: 75.9342, accuracy: 30 })).toBe('off-map')
+    expect(fixProblem({ lat: 11.3215, lng: 75.96, accuracy: 30 })).toBe('off-map')
+  })
+
+  it('refuses a fix too coarse to pick out a building', () => {
+    expect(fixProblem({ ...onCampus, accuracy: 3000 })).toBe('too-coarse')
+  })
+
+  it('reports the wrong place before the wide circle, since that is the real complaint', () => {
+    expect(fixProblem({ lat: 11.2588, lng: 75.7804, accuracy: 5000 })).toBe('off-map')
   })
 })

@@ -8,7 +8,7 @@ import { MAP_MOVE, type MapMove } from './config/mapConfig'
 import { useGeolocation } from './hooks/useGeolocation'
 import { useNavigation } from './hooks/useNavigation'
 import { minutesFor, MY_LOCATION } from './hooks/useRouting'
-import { distance as metresBetween } from './lib/geo'
+import { distance as metresBetween, FIX_PROBLEM_MESSAGE, fixProblem } from './lib/geo'
 import { nodesById } from './lib/graph'
 import { ARRIVE_RADIUS_M } from './lib/navigation'
 import type { RouteResult } from './lib/astar'
@@ -56,16 +56,26 @@ function App() {
   const location = useGeolocation()
 
   /**
+   * A fix the app refuses to act on, and why. Indoors a phone with no satellites and no
+   * known wifi locates by IP address, which can land a district away - the same wrong answer
+   * every map app gives. Snapping that to the campus network would put the user at the
+   * nearest corner of the map and point every route outbound, so an unusable fix is treated
+   * as no fix at all rather than quietly believed.
+   */
+  const problem = location.fix ? fixProblem(location.fix) : null
+  const fix = problem ? null : location.fix
+
+  /**
    * Once a fix is in, "From" means here unless the user has said otherwise — the same
    * default a phone map gives you. Derived rather than written into state, so it follows the
    * fix appearing or being cleared without an effect to keep the two in step.
    */
-  const originId = startId ?? (location.fix ? MY_LOCATION : null)
+  const originId = startId ?? (fix ? MY_LOCATION : null)
 
   // There is nothing to navigate without a destination, so clearing one drops out of
   // navigation on its own rather than needing an effect to tidy up after it.
   const navigating = navigationRequested && goalId !== null
-  const nav = useNavigation(route, location.fix, navigating)
+  const nav = useNavigation(route, fix, navigating)
 
   const showToast = (msg: string) => {
     setToast(msg)
@@ -144,7 +154,7 @@ function App() {
 
   const noRoute = originId && goalId && originId !== goalId && !route
   const locating = location.status === 'locating'
-  const hasFix = location.fix !== null
+  const hasFix = fix !== null
   const canNavigate = Boolean(route) && goalId !== null && location.status !== 'unsupported'
   const goalPlace = goalId ? placesById.get(goalId) : undefined
   const destination = goalPlace?.name ?? 'your destination'
@@ -159,8 +169,8 @@ function App() {
   const goalNodeId = goalPlace ? (mode === 'drive' ? goalPlace.driveNodeId : goalPlace.nodeId) : null
   const goalNode = goalNodeId ? nodesById.get(goalNodeId) : undefined
   const atGoal =
-    navigating && location.fix !== null && goalNode !== undefined
-      ? metresBetween(location.fix, goalNode) <= ARRIVE_RADIUS_M
+    navigating && fix !== null && goalNode !== undefined
+      ? metresBetween(fix, goalNode) <= ARRIVE_RADIUS_M
       : false
 
   return (
@@ -171,7 +181,7 @@ function App() {
         mode={mode}
         hidden={hidden}
         focus={focus}
-        fix={location.fix}
+        fix={fix}
         navigating={navigating}
         onRoute={setRoute}
         onRouteTo={handleRouteTo}
@@ -279,7 +289,13 @@ function App() {
             </p>
           )}
 
-          {originId === MY_LOCATION && location.message && (
+          {problem && (
+            <p className="pix-sm mt-2" style={{ color: 'var(--red)' }}>
+              {FIX_PROBLEM_MESSAGE[problem]}
+            </p>
+          )}
+
+          {!problem && originId === MY_LOCATION && location.message && (
             <p
               className="pix-sm mt-2"
               style={{ color: location.status === 'denied' ? 'var(--red)' : 'var(--muted)' }}
@@ -289,9 +305,9 @@ function App() {
           )}
 
           {/* GPS beside a building can be tens of metres out; say so rather than imply precision. */}
-          {originId === MY_LOCATION && hasFix && location.fix!.accuracy > 35 && (
+          {originId === MY_LOCATION && fix && fix.accuracy > 35 && (
             <p className="pix-sm mt-2" style={{ color: 'var(--muted)' }}>
-              Weak signal — accurate to about {Math.round(location.fix!.accuracy)}m
+              Weak signal — accurate to about {Math.round(fix.accuracy)}m
             </p>
           )}
         </div>
