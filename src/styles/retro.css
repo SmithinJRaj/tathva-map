@@ -311,6 +311,13 @@
   pointer-events: none;
 }
 
+.legend-rule {
+  align-self: stretch;
+  height: 2px;
+  margin: 2px 0;
+  background: var(--panel-hi);
+}
+
 /* --- Legend --------------------------------------------------------------------------- */
 
 .chip {
@@ -577,7 +584,8 @@
 
 /* Event rows inherit their type from here, as they do from the popup in a venue's card. */
 .sheet-body {
-  --tabs-h: 38px;
+  /* Search field + gap + tabs + padding: where a sticky day heading parks beneath them. */
+  --controls-h: 96px;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -587,21 +595,67 @@
   line-height: 1.15;
 }
 
-/* The tabs and the current day stay put while the list scrolls beneath them. */
-.sheet-tabs {
+/* Search and tabs stay put while the list scrolls beneath them; so does the current day. */
+.sheet-controls {
   position: sticky;
   top: 0;
   z-index: 2;
-  height: var(--tabs-h);
-  margin-bottom: 4px;
-  border-top: 0;
-  border-inline: 0;
-  box-shadow: 0 8px 0 var(--void);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: var(--controls-h);
+  padding-top: 8px;
+  background: var(--void);
+  box-shadow: 0 6px 0 var(--void);
+}
+
+.sheet-tabs {
+  flex: none;
+  height: 38px;
+}
+
+.sheet-search input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--terminal);
+  font-size: 19px;
+  line-height: 1.15;
+}
+
+.sheet-search input::placeholder {
+  color: var(--muted);
+}
+
+.sheet-search input:focus {
+  outline: none;
+}
+
+/* The browser's own clear button doesn't take the theme; ours does. */
+.sheet-search input::-webkit-search-cancel-button {
+  appearance: none;
+}
+
+.sheet-search-clear {
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--terminal);
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.sheet-search-clear:hover {
+  color: var(--ink);
 }
 
 .sheet-day {
   position: sticky;
-  top: var(--tabs-h);
+  top: var(--controls-h);
   z-index: 1;
   display: flex;
   align-items: center;
@@ -652,4 +706,26 @@
   [data-on='true'] > .live-dot {
     animation: none;
   }
+}
+
+/* --- Lite mode --------------------------------------------------------------------------- */
+/* Set on <html> by useLiteMode. Filters and endless animations are what slow phones choke on. */
+
+[data-lite] .place-live {
+  filter: none;
+  stroke-width: 4px;
+}
+
+[data-lite] .place-pulse,
+[data-lite] [data-on='true'] > .live-dot {
+  animation: none;
+}
+
+[data-lite] .event-sheet {
+  transition: none;
+}
+
+[data-lite] .slab,
+[data-lite] .event-sheet {
+  box-shadow: var(--drop-sm);
 }

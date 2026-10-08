@@ -14,6 +14,9 @@ interface Props {
   labels: Record<PlaceCategory, string>
   hidden: ReadonlySet<PlaceCategory>
   onToggle: (category: PlaceCategory) => void
+  /** Fewer effects for slower phones; lives here because Layers is the map's settings menu. */
+  lite: boolean
+  onLiteChange: (on: boolean) => void
 }
 
 /**
@@ -21,7 +24,7 @@ interface Props {
  * phone screen, being able to drop everything but food is the difference between a map you
  * can read and a wall of boxes. Collapsed by default so it never fights the map for space.
  */
-export function Legend({ order, labels, hidden, onToggle }: Props) {
+export function Legend({ order, labels, hidden, onToggle, lite, onLiteChange }: Props) {
   const [open, setOpen] = useState(false)
   const activeFilters = hidden.size
 
@@ -50,6 +53,17 @@ export function Legend({ order, labels, hidden, onToggle }: Props) {
               </button>
             )
           })}
+          <div className="legend-rule" aria-hidden />
+          <button
+            type="button"
+            className="chip"
+            aria-pressed={lite}
+            onClick={() => onLiteChange(!lite)}
+            title="Turns off glows and animations, for slower phones"
+          >
+            <span className="chip-swatch" style={{ background: 'var(--cyan)', color: 'var(--cyan)' }} />
+            Lite mode {lite ? 'on' : 'off'}
+          </button>
         </div>
       )}
 

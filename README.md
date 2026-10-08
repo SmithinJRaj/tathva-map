@@ -18,6 +18,13 @@ COOKIE_SECURE=false npm run server` next to `npm run dev`; `/admin` is the organ
 Running it for real (env vars, admins, importing the sheet, nginx, backups) is in
 [`server/README.md`](server/README.md).
 
+Every event card has a share button. The link it shares, `/?event=<id>`, opens the map on that
+event's venue with its popup open, then drops the parameter so a reload doesn't fly back.
+
+**Lite mode** switches off the glow filters, pulses, blinking and the fly-to animation, for
+phones that stutter. It turns itself on for four cores or fewer, Data Saver, or reduced motion,
+and can be flipped either way from the **Layers** menu (remembered on that phone).
+
 ## How the map is put together
 
 There are no live map tiles. The campus is a single image, stretched between two geographic
@@ -95,8 +102,10 @@ printed on QR codes around campus — a nicer label must never silently invalida
 
 For art that is not an OSM rendering, calibration will not find a fit; set `MAP_IMAGE_SIZE`
 and `MAP_BOUNDS` by hand in `mapConfig.ts` instead, and re-trace content with the dev
-Polygon tool (`npm run dev`, tick **Trace mode**, click an outline, hit **Copy** — it emits
-the `[[x, y], ...]` literal the data files use).
+Polygon tool (`npm run dev`, open the map with `?dev=1`, tick **Trace mode**, click an
+outline, hit **Copy** — it emits the `[[x, y], ...]` literal the data files use). Without
+`?dev=1` the tool stays hidden, so testing the app on a phone isn't covered by it; production
+builds leave it out entirely.
 
 ## Interface
 

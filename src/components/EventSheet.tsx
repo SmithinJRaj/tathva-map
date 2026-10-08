@@ -5,6 +5,7 @@ import { MAP_ATTRIBUTION } from '../config/mapConfig'
 import { placesById } from '../data/campus'
 import { dayLabel } from '../schedule/festDays'
 import { useScheduleData } from '../schedule/ScheduleContext'
+import { matchesQuery } from '../schedule/search'
 import { EventRow } from './EventRow'
 import { nearestSnap, SHEET_PEEK_PX, sheetHeight, type SheetSnap } from './sheetSnap'
 
@@ -21,6 +22,7 @@ export function EventSheet({ onLocate }: Props) {
   const { events, now, stale, fetchedAt } = useScheduleData()
   const [snap, setSnap] = useState<SheetSnap>('peek')
   const [tab, setTab] = useState<Tab>('live')
+  const [query, setQuery] = useState('')
   const [viewport, setViewport] = useState(() => window.innerHeight)
   const [drag, setDrag] = useState<{
     startY: number
@@ -34,7 +36,11 @@ export function EventSheet({ onLocate }: Props) {
     return () => window.removeEventListener('resize', onResize)
   }, [])
 
-  const { live, upcomingByDay } = useMemo(() => classify(events, now), [events, now])
+  const { live, upcomingByDay } = useMemo(
+    () => classify(events.filter((e) => matchesQuery(e, query)), now),
+    [events, now, query],
+  )
+  const searching = query.trim() !== ''
   const upcomingCount = upcomingByDay.reduce((n, day) => n + day.events.length, 0)
   const todayKey = istDateKey(now)
 
@@ -124,31 +130,60 @@ export function EventSheet({ onLocate }: Props) {
       </div>
 
       <div className="sheet-body">
-        <div className="seg seg-full sheet-tabs">
-          <button
-            type="button"
-            className="seg-item"
-            aria-pressed={tab === 'live'}
-            onClick={() => setTab('live')}
-          >
-            Live · {live.length}
-          </button>
-          <button
-            type="button"
-            className="seg-item"
-            aria-pressed={tab === 'upcoming'}
-            onClick={() => setTab('upcoming')}
-          >
-            Up next · {upcomingCount}
-          </button>
+        <div className="sheet-controls">
+          <label className="field sheet-search">
+            <span className="field-tag pix-sm" aria-hidden>
+              Find
+            </span>
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Event, venue or type"
+              aria-label="Search events"
+              enterKeyHint="search"
+            />
+            {searching && (
+              <button
+                type="button"
+                className="sheet-search-clear"
+                onClick={() => setQuery('')}
+                aria-label="Clear search"
+              >
+                ×
+              </button>
+            )}
+          </label>
+          <div className="seg seg-full sheet-tabs">
+            <button
+              type="button"
+              className="seg-item"
+              aria-pressed={tab === 'live'}
+              onClick={() => setTab('live')}
+            >
+              Live · {live.length}
+            </button>
+            <button
+              type="button"
+              className="seg-item"
+              aria-pressed={tab === 'upcoming'}
+              onClick={() => setTab('upcoming')}
+            >
+              Up next · {upcomingCount}
+            </button>
+          </div>
         </div>
 
         {tab === 'live' &&
           (live.length === 0 ? (
             <p className="pix-sm sheet-empty">
-              Nothing live right now
+              {searching ? `Nothing live matches "${query.trim()}"` : 'Nothing live right now'}
               <span>
-                {upcomingCount > 0 ? "Check Up next for what's coming" : 'Nothing else is scheduled yet'}
+                {upcomingCount > 0
+                  ? "Check Up next for what's coming"
+                  : searching
+                    ? 'Try a shorter search'
+                    : 'Nothing else is scheduled yet'}
               </span>
             </p>
           ) : (
@@ -159,6 +194,7 @@ export function EventSheet({ onLocate }: Props) {
                 now={now}
                 showVenue
                 onSelect={locatable(event.placeId)}
+                shareable
               />
             ))
           ))}
@@ -166,8 +202,8 @@ export function EventSheet({ onLocate }: Props) {
         {tab === 'upcoming' &&
           (upcomingByDay.length === 0 ? (
             <p className="pix-sm sheet-empty">
-              Nothing else scheduled
-              <span>New events show up here as they're added</span>
+              {searching ? `Nothing coming up matches "${query.trim()}"` : 'Nothing else scheduled'}
+              <span>{searching ? 'Try a shorter search' : "New events show up here as they're added"}</span>
             </p>
           ) : (
             upcomingByDay.map((day) => (
@@ -180,6 +216,7 @@ export function EventSheet({ onLocate }: Props) {
                     now={now}
                     showVenue
                     onSelect={locatable(event.placeId)}
+                    shareable
                   />
                 ))}
               </div>

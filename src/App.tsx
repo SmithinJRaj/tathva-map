@@ -1,12 +1,16 @@
-import { lazy, Suspense, useCallback, useMemo, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CampusMap } from './components/CampusMap'
 import { EventSheet } from './components/EventSheet'
 import { Legend } from './components/Legend'
 import { placesById, routablePlaces, type PlaceCategory } from './data/campus'
+import { MAP_MOVE, type MapMove } from './config/mapConfig'
 import { minutesFor } from './hooks/useRouting'
 import type { RouteResult } from './lib/astar'
 import type { TravelMode } from './lib/graph'
+import { readEventIdFromUrl, withoutEventParam } from './lib/eventLink'
+import { useLiteMode } from './lib/liteMode'
 import { parseScannedNode, readStartNodeFromUrl, writeStartNodeToUrl } from './lib/startNode'
+import { useScheduleData } from './schedule/ScheduleContext'
 
 // html5-qrcode is large; load it only when the scanner opens (still precached for offline).
 const QrScannerOverlay = lazy(() =>
@@ -23,17 +27,19 @@ const CATEGORY_LABELS: Record<PlaceCategory, string> = {
 
 const CATEGORY_ORDER: PlaceCategory[] = ['event', 'academic', 'food', 'amenity', 'other']
 
-type FocusTarget = { placeId: string; token: number; openPopup: boolean }
+type FocusTarget = { placeId: string; token: number; openPopup: boolean; move: MapMove }
 
 type ZoomControls = { zoomIn: () => void; zoomOut: () => void } | null
 
 function App() {
+  const [lite, setLite] = useLiteMode()
+  const move: MapMove = lite ? 'jump' : MAP_MOVE
   const [startId, setStartId] = useState<string | null>(readStartNodeFromUrl)
   const [goalId, setGoalId] = useState<string | null>(null)
   const [mode, setMode] = useState<TravelMode>('walk')
   const [hidden, setHidden] = useState<ReadonlySet<PlaceCategory>>(() => new Set())
   const [focus, setFocus] = useState<FocusTarget | null>(() =>
-    startId ? { placeId: startId, token: 0, openPopup: false } : null,
+    startId ? { placeId: startId, token: 0, openPopup: false, move: 'jump' } : null,
   )
   const [route, setRoute] = useState<RouteResult | null>(null)
   const [zoom, setZoom] = useState<ZoomControls>(null)
@@ -53,14 +59,35 @@ function App() {
       return
     }
     setStartId(id)
-    setFocus((f) => ({ placeId: id, token: (f?.token ?? 0) + 1, openPopup: false }))
+    setFocus((f) => ({ placeId: id, token: (f?.token ?? 0) + 1, openPopup: false, move }))
     writeStartNodeToUrl(id)
     showToast(`You are at ${placesById.get(id)!.name}`)
-  }, [])
+  }, [move])
 
-  const handleLocate = useCallback((placeId: string) => {
-    setFocus((f) => ({ placeId, token: (f?.token ?? 0) + 1, openPopup: true }))
-  }, [])
+  const handleLocate = useCallback(
+    (placeId: string) => {
+      setFocus((f) => ({ placeId, token: (f?.token ?? 0) + 1, openPopup: true, move }))
+    },
+    [move],
+  )
+
+  // --- Opened from a shared event link ---------------------------------------------------
+  // The cached schedule may predate the event, so "not found" waits for a fetch made since
+  // the page loaded before saying so.
+  const { events, fetchedAt } = useScheduleData()
+  const sharedEventId = useRef(readEventIdFromUrl())
+  const [openedAt] = useState(Date.now)
+  useEffect(() => {
+    const id = sharedEventId.current
+    if (!id) return
+    const event = events.find((e) => e.id === id)
+    const settled = event || (fetchedAt !== null && fetchedAt >= openedAt)
+    if (!settled) return
+    sharedEventId.current = null
+    window.history.replaceState(null, '', withoutEventParam())
+    if (event && placesById.has(event.placeId)) handleLocate(event.placeId)
+    else showToast('That event is no longer listed')
+  }, [events, fetchedAt, openedAt, handleLocate])
 
   const handleRouteTo = useCallback((placeId: string) => {
     setGoalId(placeId)
@@ -168,6 +195,8 @@ function App() {
         labels={CATEGORY_LABELS}
         hidden={hidden}
         onToggle={toggleCategory}
+        lite={lite}
+        onLiteChange={setLite}
       />
 
       {/* --- Zoom + scan -------------------------------------------------------------- */}

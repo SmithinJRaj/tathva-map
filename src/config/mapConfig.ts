@@ -103,5 +103,10 @@ export function imageShape(points: readonly (readonly [number, number])[]): LatL
   return points.map(([x, y]) => imagePoint(x, y))
 }
 
-/** How the map moves to a venue picked from the schedule: animated flight or instant jump. */
-export const MAP_MOVE: 'fly' | 'jump' = 'fly'
+export type MapMove = 'fly' | 'jump'
+
+/**
+ * How the map moves to a venue picked from the schedule: animated flight or instant jump.
+ * Lite mode always jumps; this is the choice for everyone else.
+ */
+export const MAP_MOVE: MapMove = 'fly'

@@ -37,7 +37,7 @@ export function PlacePopup({ place, onRouteTo }: Props) {
             <ul className="retro-list retro-events">
               {section.events.map((e) => (
                 <li key={e.id}>
-                  <EventRow event={e} now={now} showVenue={e.placeId !== id} showDescription />
+                  <EventRow event={e} now={now} showVenue={e.placeId !== id} showDescription shareable />
                 </li>
               ))}
             </ul>

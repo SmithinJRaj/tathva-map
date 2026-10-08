@@ -7,7 +7,7 @@ import {
   MAP_BOUNDS,
   MAP_IMAGE_PIXELATED,
   MAP_IMAGE_URL,
-  MAP_MOVE,
+  type MapMove,
   MAX_BOUNDS_PAD,
   MAX_ZOOM,
 } from '../config/mapConfig'
@@ -25,8 +25,10 @@ import { PlacePopup } from './PlacePopup'
 const MAX_PAN_BOUNDS = L.latLngBounds(MAP_BOUNDS).pad(MAX_BOUNDS_PAD)
 
 // `import.meta.env.DEV` is statically false in production builds, so this whole
-// dynamic import (and the tool's chunk) is dropped from the bundle.
-const PolygonTool = import.meta.env.DEV
+// dynamic import (and the tool's chunk) is dropped from the bundle. In dev it still waits for
+// `?dev=1`, so testing the app on a phone isn't covered by the tracing panel.
+const PolygonTool =
+  import.meta.env.DEV && new URLSearchParams(window.location.search).has('dev')
   ? lazy(() => import('./dev/PolygonTool').then((m) => ({ default: m.PolygonTool })))
   : null
 
@@ -36,7 +38,7 @@ interface Props {
   mode: TravelMode
   hidden: ReadonlySet<PlaceCategory>
   /** A new token (even for the same place) re-centres the map, so re-scanning a QR still works. */
-  focus: { placeId: string; token: number; openPopup: boolean } | null
+  focus: { placeId: string; token: number; openPopup: boolean; move: MapMove } | null
   onRoute: (route: RouteResult | null) => void
   onRouteTo: (placeId: string) => void
   onZoomControls: (controls: { zoomIn: () => void; zoomOut: () => void } | null) => void
@@ -63,7 +65,7 @@ function FocusPlace({ focus }: Pick<Props, 'focus'>) {
       timer = window.setTimeout(() => el.classList.remove('place-pulse'), 1800)
     }
 
-    if (MAP_MOVE === 'fly') {
+    if (focus.move === 'fly') {
       map.once('moveend', arrive)
       map.flyTo(place.position, 18, { duration: 1.2 })
     } else {

@@ -239,6 +239,13 @@
   background: #130c28;
 }
 
+.sheet-body .event-row[data-tone='soon'],
+.retro-popup .event-row[data-tone='soon'] {
+  border-color: rgb(251 191 36 / 0.45);
+  border-left: 4px solid var(--amber);
+  padding-left: 7px;
+}
+
 .sheet-body .event-row[data-state='live'],
 .retro-popup .event-row[data-state='live'] {
   border-color: rgb(74 222 128 / 0.45);
@@ -289,12 +296,14 @@ button.event-row:active {
 
 .event-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 8px;
+  gap: 0 8px;
 }
 
+/* Wide enough for a couple of words; past that the status drops below rather than squeezing it. */
 .event-title {
-  flex: 1;
+  flex: 1 1 7em;
   min-width: 0;
   color: var(--ink);
   overflow-wrap: anywhere;
@@ -350,6 +359,7 @@ button.event-row:active {
 
 .event-status[data-tone='live'] { color: var(--green); }
 .event-status[data-tone='delayed'] { color: var(--amber); }
+.event-status[data-tone='soon'] { color: var(--amber); }
 .event-status[data-tone='early'] { color: var(--cyan); }
 .event-status[data-tone='cancelled'] { color: var(--red); }
 
@@ -359,4 +369,51 @@ button.event-row:active {
 
 .event-row.is-cancelled .event-title {
   text-decoration: line-through;
+}
+
+/* --- Shareable rows ---------------------------------------------------------------------- */
+
+.event-card {
+  position: relative;
+}
+
+.event-row.has-share {
+  padding-right: 40px;
+}
+
+.event-share {
+  position: absolute;
+  right: 6px;
+  bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 4px;
+  border: 2px solid var(--panel-hi);
+  background: var(--void);
+  color: var(--violet);
+  cursor: pointer;
+}
+
+.event-share:hover,
+.event-share:focus-visible {
+  border-color: var(--violet);
+  color: var(--ink);
+  outline: none;
+}
+
+.event-share-done {
+  color: var(--green);
+}
+
+.event-share-done[data-failed] {
+  color: var(--red);
+}
+
+.event-share-done {
+  font: 6px/1.6 'Press Start 2P', monospace;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
