@@ -52,11 +52,23 @@ campus moves with the picture, still aligned.
 The art is a rendering of OpenStreetMap data, so its buildings are the same shapes in the
 same projection as the ones Overpass returns. That turns georeferencing into a registration
 problem: `calibrate-basemap.py` rasterises the OSM footprints at a candidate scale, slides
-them over the image's building mask, and keeps whichever scale and offset line up best.
-Rotation is assumed zero (web maps are north-up) and the projection Web Mercator, leaving
-three unknowns; translation is solved in one FFT per scale, so the search is a loop over
-scales rather than a 3-D grid. The current fit overlaps at 0.54, and the outlines land on
-the drawn buildings to within a pixel or two.
+them over the image's mask of drawn shapes, and keeps whichever scale and offset line up
+best. Rotation is assumed zero (web maps are north-up) and the projection Web Mercator,
+leaving three unknowns; translation is solved in one FFT per scale, so the search is a loop
+over scales rather than a 3-D grid.
+
+It runs **in two passes**, and the second is not optional. The coarse pass works at 512 px
+wide, which quantises translation to five art pixels and steps scale by about 1.2% — over a
+2560 px image that leaves tens of pixels of slop at the edges, enough to sit outlines
+visibly off their buildings. The refine pass re-searches a narrow bracket around the coarse
+answer at 2048 px. Both passes register against the buildings *and* the green areas, which
+are drawn just as crisply and nearly double the signal.
+
+Measured against the art's own drawn shapes, refinement moved the median error from
+(−3, −2) px to (0, +2) and cut the outlines sitting more than 8 px out from 28 of 67 to 19.
+The ones that still measure badly are rows of identical parallel strips — the lab block —
+where a shape can slide onto its neighbour and still score well; those are ambiguity in the
+measurement, not misalignment on screen.
 
 Run it whenever the art changes:
 
