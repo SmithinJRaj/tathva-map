@@ -5,7 +5,7 @@ import { effectiveCategory, placesWithOutline, type PlaceCategory } from '../dat
 import { useScheduleData } from '../schedule/ScheduleContext'
 import { getPlaceLayer, registerPlaceLayer } from './layerRegistry'
 import { PlacePopup } from './PlacePopup'
-import { SHEET_PEEK_PX } from './sheetSnap'
+import { PLANNER_CLEARANCE_PX, SHEET_PEEK_PX } from './sheetSnap'
 
 /** Above the map image (250), below the default overlay pane (400) where the route line lives. */
 export const PLACES_PANE = 'places'
@@ -124,7 +124,7 @@ export function PlaceLayer({ interactive, hidden, onRouteTo }: Props) {
                 maxWidth={260}
                 minWidth={200}
                 // Keep the popup clear of the From/To panel at the top of the screen.
-                autoPanPaddingTopLeft={[16, 170]}
+                autoPanPaddingTopLeft={[16, PLANNER_CLEARANCE_PX]}
                 autoPanPaddingBottomRight={[16, 16 + SHEET_PEEK_PX]}
               >
                 <PlacePopup place={place} onRouteTo={onRouteTo} />

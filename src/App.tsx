@@ -100,59 +100,59 @@ function App() {
 
       {/* --- Trip planner ------------------------------------------------------------- */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-[1000] p-2.5">
-        <div className="slab pointer-events-auto mx-auto max-w-md p-2.5">
+        <div className="slab slab-solid pointer-events-auto mx-auto max-w-md p-2.5">
           <div className="flex items-center gap-2">
             <div className="min-w-0 flex-1 space-y-1.5">
               <PlaceField label="From" value={startId} onChange={setStartId} />
               <PlaceField label="To" value={goalId} onChange={setGoalId} />
             </div>
-            <button
-              type="button"
-              className="btn h-9 w-9 shrink-0 p-0"
-              onClick={swap}
-              disabled={!startId && !goalId}
-              aria-label="Swap start and destination"
-              title="Swap"
-            >
-              <svg viewBox="0 0 16 16" className="h-4 w-4" fill="currentColor" aria-hidden>
-                <path d="M5 2h2v9h2l-3 3-3-3h2V2zM11 14H9V5H7l3-3 3 3h-2v9z" />
-              </svg>
-            </button>
-          </div>
-
-          <div className="mt-2 flex items-center gap-2">
-            <div className="seg">
-              <ModeButton current={mode} value="walk" onChange={setMode}>
-                Walk
-              </ModeButton>
-              <ModeButton current={mode} value="drive" onChange={setMode}>
-                Drive
-              </ModeButton>
-            </div>
-
-            <div className="ml-auto flex items-center gap-2">
-              {route && (
-                <p
-                  className="pix whitespace-nowrap"
-                  style={{ color: mode === 'walk' ? 'var(--amber)' : 'var(--cyan)' }}
-                >
-                  {Math.round(route.distance)}m · {minutesFor(route.distance, mode)}min
-                </p>
-              )}
-              {(startId || goalId) && (
-                <button
-                  type="button"
-                  className="btn btn-ghost"
-                  onClick={() => {
-                    setStartId(null)
-                    setGoalId(null)
-                  }}
-                >
-                  Clear
-                </button>
-              )}
+            {/* One icon per field row, so nothing in the planner can outgrow a phone screen. */}
+            <div className="flex shrink-0 flex-col gap-1.5">
+              <button
+                type="button"
+                className="btn icon-btn"
+                onClick={swap}
+                disabled={!startId && !goalId}
+                aria-label="Swap start and destination"
+                title="Swap"
+              >
+                <svg viewBox="0 0 16 16" className="h-4 w-4" fill="currentColor" aria-hidden>
+                  <path d="M5 2h2v9h2l-3 3-3-3h2V2zM11 14H9V5H7l3-3 3 3h-2v9z" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                className="btn btn-ghost icon-btn"
+                onClick={() => {
+                  setStartId(null)
+                  setGoalId(null)
+                }}
+                disabled={!startId && !goalId}
+                aria-label="Clear start and destination"
+                title="Clear"
+              >
+                <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="currentColor" aria-hidden>
+                  <path d="M2 2h3v3H2zM5 5h3v3H5zM8 8h3v3H8zM11 11h3v3h-3zM11 2h3v3h-3zM8 5h3v3H8zM5 8h3v3H5zM2 11h3v3H2z" />
+                </svg>
+              </button>
             </div>
           </div>
+
+          <div className="seg seg-full mt-2">
+            <ModeButton current={mode} value="walk" onChange={setMode}>
+              Walk
+            </ModeButton>
+            <ModeButton current={mode} value="drive" onChange={setMode}>
+              Drive
+            </ModeButton>
+          </div>
+
+          {route && (
+            <p className="route-summary pix mt-2" data-mode={mode}>
+              <span aria-hidden>&gt;</span> {Math.round(route.distance)} m · {minutesFor(route.distance, mode)} min{' '}
+              {mode === 'walk' ? 'on foot' : 'by car'}
+            </p>
+          )}
 
           {noRoute && (
             <p className="pix-sm mt-2" style={{ color: 'var(--red)' }}>

@@ -73,12 +73,12 @@ export function EventSheet({ onLocate }: Props) {
 
   const offline =
     stale && fetchedAt !== null
-      ? ` · Offline · updated ${Math.max(0, Math.round((now.getTime() - fetchedAt) / 60_000))} min ago`
-      : ''
+      ? `Offline · ${Math.max(0, Math.round((now.getTime() - fetchedAt) / 60_000))} min ago`
+      : null
 
   return (
     <section
-      className="event-sheet slab"
+      className="event-sheet slab slab-solid"
       style={{ height }}
       data-dragging={drag ? 'true' : undefined}
       aria-label="Live and upcoming events"
@@ -102,9 +102,15 @@ export function EventSheet({ onLocate }: Props) {
         >
           <span className="sheet-grip" aria-hidden />
           <p className="pix-sm sheet-summary">
-            <span style={{ color: 'var(--red)' }}>●</span> {live.length} LIVE · {upcomingCount} UP
-            NEXT
-            {offline}
+            <span className="sheet-live" data-on={live.length > 0 ? 'true' : undefined}>
+              <span className="live-dot" aria-hidden />
+              Live {live.length}
+            </span>
+            <span className="sheet-next">Up next {upcomingCount}</span>
+            {offline && <span className="sheet-offline">{offline}</span>}
+            <span className="sheet-caret" aria-hidden>
+              {snap === 'peek' ? '▲' : '▼'}
+            </span>
           </p>
         </div>
         <a
@@ -118,14 +124,14 @@ export function EventSheet({ onLocate }: Props) {
       </div>
 
       <div className="sheet-body">
-        <div className="seg">
+        <div className="seg seg-full sheet-tabs">
           <button
             type="button"
             className="seg-item"
             aria-pressed={tab === 'live'}
             onClick={() => setTab('live')}
           >
-            Live
+            Live · {live.length}
           </button>
           <button
             type="button"
@@ -133,13 +139,18 @@ export function EventSheet({ onLocate }: Props) {
             aria-pressed={tab === 'upcoming'}
             onClick={() => setTab('upcoming')}
           >
-            Up next
+            Up next · {upcomingCount}
           </button>
         </div>
 
         {tab === 'live' &&
           (live.length === 0 ? (
-            <p className="pix-sm sheet-empty">Nothing live right now.</p>
+            <p className="pix-sm sheet-empty">
+              Nothing live right now
+              <span>
+                {upcomingCount > 0 ? "Check Up next for what's coming" : 'Nothing else is scheduled yet'}
+              </span>
+            </p>
           ) : (
             live.map((event) => (
               <EventRow
@@ -154,7 +165,10 @@ export function EventSheet({ onLocate }: Props) {
 
         {tab === 'upcoming' &&
           (upcomingByDay.length === 0 ? (
-            <p className="pix-sm sheet-empty">Nothing else scheduled.</p>
+            <p className="pix-sm sheet-empty">
+              Nothing else scheduled
+              <span>New events show up here as they're added</span>
+            </p>
           ) : (
             upcomingByDay.map((day) => (
               <div key={day.dateKey}>

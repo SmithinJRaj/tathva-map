@@ -19,7 +19,7 @@ import { useScheduleData } from '../schedule/ScheduleContext'
 import { getPlaceLayer, registerPlaceLayer } from './layerRegistry'
 import { endpointIcon, placeIcon } from './markers'
 import { PlaceLayer } from './PlaceLayer'
-import { SHEET_PEEK_PX } from './sheetSnap'
+import { PLANNER_CLEARANCE_PX, SHEET_PEEK_PX } from './sheetSnap'
 import { PlacePopup } from './PlacePopup'
 
 const MAX_PAN_BOUNDS = L.latLngBounds(MAP_BOUNDS).pad(MAX_BOUNDS_PAD)
@@ -202,7 +202,7 @@ export function CampusMap({
               className="retro-popup"
               maxWidth={260}
               minWidth={200}
-              autoPanPaddingTopLeft={[16, 170]}
+              autoPanPaddingTopLeft={[16, PLANNER_CLEARANCE_PX]}
               autoPanPaddingBottomRight={[16, 16 + SHEET_PEEK_PX]}
             >
               <PlacePopup place={place} onRouteTo={onRouteTo} />
