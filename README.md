@@ -206,6 +206,14 @@ Rooms inside buildings (`indoorPlaces` in `festContent.ts`) hang off their build
 junction by a foot-only link whose cost stands in for the climb — stairs are zero metres on
 the ground, so without that a route would call them free.
 
+**Fest venues** (`festVenues`, same file) are the other way round: a name for somewhere that
+is already on the map. The Proshow is not a building, it is a night on the football ground,
+and nobody searches for "NITC Football Ground" when they want it. They appear in the From/To
+pickers and in the schedule's venue list and route exactly as their host does, but they are
+not drawn — the ground already is, and a second marker on it would just be clutter. Both
+kinds set `anchoredTo`, which is what keeps them off the map and makes selecting one
+highlight the shape it sits on.
+
 ## Where you are, and getting there
 
 **Live location.** `useGeolocation` watches `navigator.geolocation`. Three things to know:

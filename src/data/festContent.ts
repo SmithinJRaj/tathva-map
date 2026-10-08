@@ -105,3 +105,29 @@ export const indoorPlaces: IndoorPlace[] = [
     },
   },
 ]
+
+/**
+ * Venues the fest names that are not places on the map. The Proshow is not a building: it is
+ * a night on the football ground, and nobody looks for "NITC Football Ground" when they want
+ * it. These appear in the From/To pickers and in the schedule's venue list, and they route to
+ * whatever they are held on — but they are not drawn, because the ground already is.
+ *
+ * Add one per fest venue that has a name of its own. Delete them when the fest changes; none
+ * of this is campus geography.
+ */
+export interface FestVenue {
+  id: string
+  name: string
+  /** Generated id of the place it is held at. */
+  at: string
+  content?: PlaceContent
+}
+
+export const festVenues: FestVenue[] = [
+  {
+    id: 'proshow',
+    name: 'Proshow',
+    at: 'nit_football_ground',
+    content: { description: 'Held on the NITC Football Ground.' },
+  },
+]
