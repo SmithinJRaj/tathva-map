@@ -507,3 +507,116 @@
     transition: none;
   }
 }
+
+/* --- Live location ---------------------------------------------------------------------- */
+
+/*
+ * The "you are here" dot. Square like every other pin, with a slow pulse so it reads as live
+ * rather than as one more place marker, and a bright ring to carry it over the busy art.
+ */
+.live-dot {
+  width: 18px;
+  height: 18px;
+  border: 3px solid var(--void);
+  background: var(--cyan);
+  box-shadow: 0 0 0 2px var(--cyan), 0 0 16px rgb(103 232 249 / 0.9);
+  animation: live-pulse 2s steps(8, end) infinite;
+}
+
+@keyframes live-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px var(--cyan), 0 0 16px rgb(103 232 249 / 0.9);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgb(103 232 249 / 0.35), 0 0 22px rgb(103 232 249 / 0.6);
+  }
+}
+
+/* A device only reports a heading while moving, so the wedge appears only then. */
+.live-dot.has-heading::before {
+  content: '';
+  position: absolute;
+  top: -11px;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-right: 6px solid transparent;
+  border-bottom: 9px solid var(--cyan);
+  border-left: 6px solid transparent;
+  transform-origin: 50% 20px;
+  transform: translateX(-50%) rotate(var(--heading, 0deg));
+}
+
+.live-dot.has-heading {
+  position: relative;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-dot {
+    animation: none;
+  }
+}
+
+/* The locate button, lit while it is the active origin. */
+.btn.is-live {
+  background: var(--cyan);
+  box-shadow: var(--drop-sm), 0 0 14px rgb(103 232 249 / 0.7);
+}
+
+.locate-spinner {
+  width: 14px;
+  height: 14px;
+  border: 3px solid var(--void);
+  border-top-color: transparent;
+  animation: locate-spin 900ms steps(8, end) infinite;
+}
+
+@keyframes locate-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --- Navigation card -------------------------------------------------------------------- */
+
+.nav-panel {
+  border-color: var(--cyan);
+  box-shadow: var(--drop), 0 0 24px rgb(103 232 249 / 0.35);
+}
+
+.nav-arrow {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border: 2px solid var(--void);
+  background: var(--cyan);
+  color: var(--void);
+  box-shadow: var(--drop-sm);
+}
+
+.nav-arrow.is-arrived {
+  background: var(--green);
+}
+
+.nav-instruction {
+  color: var(--ink);
+}
+
+.nav-detail {
+  margin-top: 2px;
+  color: var(--muted);
+}
+
+.nav-eta {
+  flex-shrink: 0;
+  text-align: right;
+  color: var(--cyan);
+}
+
+.nav-eta-unit {
+  display: block;
+  color: var(--muted);
+}

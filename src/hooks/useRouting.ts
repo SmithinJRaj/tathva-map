@@ -3,7 +3,14 @@ import { useEffect, useMemo, useRef } from 'react'
 import { useMap } from 'react-leaflet'
 import { placesById } from '../data/campus'
 import { buildAdjacency, findRoute, type RouteResult } from '../lib/astar'
+import { snapToNetwork, type LatLng } from '../lib/geo'
 import { graph, type TravelMode } from '../lib/graph'
+
+/**
+ * Stands in for a place in the From field when the route should start wherever the user
+ * actually is. Not a real place id, so it can never collide with one from the generated data.
+ */
+export const MY_LOCATION = '__my_location__'
 
 // One adjacency per mode, built once: dropping the footpaths is what keeps a driving route
 // on the roads, so the two modes genuinely search different networks.
@@ -57,7 +64,10 @@ export const minutesFor = (metres: number, mode: TravelMode) =>
  * pedestrian zone, or the host building's entrance for a room upstairs — rather than being
  * told there is no route at all.
  */
-function nodeFor(placeId: string | null, mode: TravelMode): string | null {
+function nodeFor(placeId: string | null, mode: TravelMode, fix: LatLng | null): string | null {
+  // A live fix is not on the network - GPS drifts further than the paths are apart - so it
+  // is snapped to the nearest edge this mode may use, and the route starts from that end.
+  if (placeId === MY_LOCATION) return fix ? (snapToNetwork(fix, mode)?.nodeId ?? null) : null
   const place = placeId ? placesById.get(placeId) : undefined
   if (!place) return null
   return mode === 'drive' ? place.driveNodeId : place.nodeId
@@ -72,16 +82,27 @@ export function useRouting(
   startPlaceId: string | null,
   goalPlaceId: string | null,
   mode: TravelMode,
+  fix: LatLng | null = null,
+  /** False while navigating, so following the user does not fight the fit-to-route. */
+  fitToRoute = true,
 ): RouteResult | null {
   const map = useMap()
   const linesRef = useRef<L.Polyline[]>([])
 
+  // Recomputing on every GPS tick would thrash A* and redraw the line constantly. The start
+  // node only changes when the fix crosses onto a different edge, so key the memo on that.
+  const startNode = useMemo(
+    () => nodeFor(startPlaceId, mode, fix),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [startPlaceId, mode, fix && snapToNetwork(fix, mode)?.nodeId],
+  )
+
   const route = useMemo(() => {
-    const from = nodeFor(startPlaceId, mode)
-    const to = nodeFor(goalPlaceId, mode)
-    if (!from || !to || from === to) return null
-    return findRoute(graph, from, to, adjacency[mode])
-  }, [startPlaceId, goalPlaceId, mode])
+    const to = nodeFor(goalPlaceId, mode, fix)
+    if (!startNode || !to || startNode === to) return null
+    return findRoute(graph, startNode, to, adjacency[mode])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startNode, goalPlaceId, mode])
 
   useEffect(() => {
     if (!route) return
@@ -94,13 +115,13 @@ export function useRouting(
     ]
     for (const line of lines) line.addTo(map)
     linesRef.current = lines
-    map.fitBounds(lines[0].getBounds(), { padding: [56, 56], maxZoom: 18 })
+    if (fitToRoute) map.fitBounds(lines[0].getBounds(), { padding: [56, 56], maxZoom: 18 })
 
     return () => {
       for (const line of linesRef.current) line.remove()
       linesRef.current = []
     }
-  }, [map, route, mode])
+  }, [map, route, mode, fitToRoute])
 
   return route
 }
