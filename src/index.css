@@ -13,6 +13,12 @@ body,
   font-smooth: never;
 }
 
+/* The map frame is a fixed-size box centred in the window; nothing outside it should ever
+   need to scroll the page itself. */
+body {
+  overflow: hidden;
+}
+
 /* Pixel type sits on whole pixels or it shimmers. */
 body {
   text-rendering: optimizeSpeed;

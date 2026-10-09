@@ -1,5 +1,5 @@
 import L from 'leaflet'
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { ImageOverlay, MapContainer, Marker, Pane, Popup, useMap, useMapEvents } from 'react-leaflet'
 import {
   CAMPUS_BOUNDS,
@@ -85,6 +85,21 @@ function FocusPlace({ focus }: Pick<Props, 'focus'>) {
       pulsed?.classList.remove('place-pulse')
     }
   }, [map, focus])
+  return null
+}
+
+/**
+ * Frames the opening view so the campus fills the frame edge-to-edge, the way object-fit:
+ * cover fills a box - cropping whichever axis runs long rather than Leaflet's own fitBounds,
+ * which shows the whole of CAMPUS_BOUNDS and letterboxes the starfield into the gap on the
+ * other axis. Runs as a layout effect so the correction lands before the first paint.
+ */
+function CoverCampusBounds() {
+  const map = useMap()
+  useLayoutEffect(() => {
+    const bounds = L.latLngBounds(CAMPUS_BOUNDS)
+    map.setView(bounds.getCenter(), map.getBoundsZoom(bounds, true), { animate: false })
+  }, [map])
   return null
 }
 
@@ -193,16 +208,17 @@ export function CampusMap({
 
   return (
     <MapContainer
-      // Opens framed on the campus; MAX_PAN_BOUNDS still allows panning out to the edges.
+      // Starting view before CoverCampusBounds corrects it to fill the frame; MAX_PAN_BOUNDS
+      // still allows panning out to the edges.
       bounds={CAMPUS_BOUNDS}
       zoomSnap={0.25}
       minZoom={FALLBACK_MIN_ZOOM}
       maxZoom={MAX_ZOOM}
       maxBounds={MAX_PAN_BOUNDS}
       maxBoundsViscosity={1}
-      // .space-bg paints the starfield; an inline `background` here would be a shorthand
-      // and would silently blow away its background-image.
-      className="space-bg h-full w-full"
+      // .map-void paints the hazard-stripe filler seen past the edge of the art; an inline
+      // `background` here would be a shorthand and would silently blow away its background-image.
+      className="map-void h-full w-full"
       zoomControl={false}
       attributionControl={false}
     >
@@ -242,6 +258,7 @@ export function CampusMap({
       <LiveDots />
       <Endpoints startId={startId} goalId={goalId} />
       <LocationLayer fix={fix} follow={navigating} />
+      <CoverCampusBounds />
       <FitMinZoom />
       <ZoomBridge onZoomControls={onZoomControls} />
       <RelaxBoundsWhilePopupOpen />
