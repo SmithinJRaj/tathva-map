@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type PointerEvent } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState, type PointerEvent } from 'react'
 import { classify } from '../../shared/classify.ts'
 import { istDateKey } from '../../shared/ist.ts'
 import { MAP_ATTRIBUTION } from '../config/mapConfig'
@@ -24,17 +24,26 @@ export function EventSheet({ onLocate }: Props) {
   const [snap, setSnap] = useState<SheetSnap>('peek')
   const [tab, setTab] = useState<Tab>('live')
   const [query, setQuery] = useState('')
+  // The sheet snaps as a share of its own box, not the browser window - on a desktop
+  // where the map frame is smaller than the viewport, window height would push "full"
+  // past the frame's own border. window.innerHeight is only the guess before the first
+  // layout pass measures the frame for real.
   const [viewport, setViewport] = useState(() => window.innerHeight)
   const [drag, setDrag] = useState<{
     startY: number
     startHeight: number
     height: number
   } | null>(null)
+  const sheetRef = useRef<HTMLElement>(null)
 
-  useEffect(() => {
-    const onResize = () => setViewport(window.innerHeight)
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
+  useLayoutEffect(() => {
+    const frame = sheetRef.current?.parentElement
+    if (!frame) return
+    const update = () => setViewport(frame.clientHeight)
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(frame)
+    return () => observer.disconnect()
   }, [])
 
   const { live, upcomingByDay } = useMemo(
@@ -89,6 +98,7 @@ export function EventSheet({ onLocate }: Props) {
 
   return (
     <section
+      ref={sheetRef}
       className="event-sheet slab slab-solid"
       style={{ height }}
       data-dragging={drag ? 'true' : undefined}

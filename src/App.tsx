@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { CampusMap } from './components/CampusMap'
 import { EventSheet } from './components/EventSheet'
 import { Legend } from './components/Legend'
 import { PlaceField } from './components/PlaceField'
 import { NavPanel } from './components/NavPanel'
 import { placesById, type PlaceCategory } from './data/campus'
-import { MAP_MOVE, type MapMove } from './config/mapConfig'
+import { MAP_IMAGE_SIZE, MAP_MOVE, type MapMove } from './config/mapConfig'
 import { useGeolocation } from './hooks/useGeolocation'
 import { useNavigation } from './hooks/useNavigation'
 import { minutesFor, MY_LOCATION } from './hooks/useRouting'
@@ -156,7 +156,11 @@ function App() {
       : false
 
   return (
-    <div className="relative h-full w-full overflow-hidden">
+    <div className="app-stage">
+    <div
+      className="map-frame relative overflow-hidden"
+      style={{ '--map-ratio': MAP_IMAGE_SIZE.width / MAP_IMAGE_SIZE.height } as CSSProperties}
+    >
       <CampusMap
         startId={originId}
         goalId={goalId}
@@ -351,6 +355,7 @@ function App() {
           {toast}
         </div>
       )}
+    </div>
     </div>
   )
 }

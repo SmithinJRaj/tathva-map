@@ -58,8 +58,8 @@ export const MAP_ATTRIBUTION = `${campus.attribution} · ${campus.generatedAt}`
 // Everything on the map is stored in image pixels and projected by `imagePoint` below, so
 // steps 1-2 alone keep the app working: the campus moves with the picture.
 
-// Behind and around the art: the `.space-bg` starfield in styles/retro.css, which owns both
-// the colour and the stars. Do not set a `background` shorthand on the map container.
+// Behind and around the art: the `.map-void` hazard stripes in styles/retro.css, which own
+// both the colour and the pattern. Do not set a `background` shorthand on the map container.
 
 /**
  * Deliberately loose floor so the initial fit-to-image view is never clamped. The real min

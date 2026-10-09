@@ -20,7 +20,7 @@
 .retro-popup .leaflet-popup-content {
   margin: 12px 14px;
   font-family: 'VT323', monospace;
-  font-size: 20px;
+  font-size: 26px;
   line-height: 1.1;
 }
 
@@ -40,7 +40,7 @@
   border: 2px solid var(--violet);
   background: var(--red);
   color: var(--retro-ink);
-  font: 16px/20px 'Press Start 2P', monospace;
+  font: 18px/20px 'Press Start 2P', monospace;
   box-shadow: 2px 2px 0 var(--retro-shadow);
 }
 
@@ -111,7 +111,7 @@
 .retro-title {
   /* Press Start 2P is very wide: keep it small and clear of the corner close button. */
   padding-right: 12px;
-  font: 12px/1.5 'Press Start 2P', monospace;
+  font: 16px/1.5 'Press Start 2P', monospace;
   color: var(--retro-accent);
   overflow-wrap: anywhere;
 }
@@ -123,7 +123,7 @@
   border: 2px solid var(--retro-panel);
   background: var(--badge, var(--retro-muted));
   color: var(--retro-panel);
-  font: 8px/1.4 'Press Start 2P', monospace;
+  font: 12px/1.4 'Press Start 2P', monospace;
   text-transform: uppercase;
 }
 
@@ -144,7 +144,7 @@
 
 .retro-popup-body .retro-section-title {
   margin-bottom: 4px;
-  font: 9px/1.5 'Press Start 2P', monospace;
+  font: 13px/1.5 'Press Start 2P', monospace;
   color: var(--retro-accent);
   text-transform: uppercase;
 }
@@ -191,7 +191,7 @@
   color: var(--void);
   box-shadow: var(--drop-sm), var(--glow);
   font-family: var(--pixel);
-  font-size: 8px;
+  font-size: 12px;
   line-height: 1.6;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -354,7 +354,7 @@ button.event-row:active {
   border: 2px solid var(--void);
   background: var(--chip, var(--muted));
   color: var(--void);
-  font: 7px/1.6 'Press Start 2P', monospace;
+  font: 11px/1.6 'Press Start 2P', monospace;
   text-transform: uppercase;
 }
 
@@ -366,7 +366,7 @@ button.event-row:active {
 
 .event-status {
   flex: none;
-  font: 7px/1.6 'Press Start 2P', monospace;
+  font: 11px/1.6 'Press Start 2P', monospace;
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -427,7 +427,7 @@ button.event-row:active {
 }
 
 .event-share-done {
-  font: 6px/1.6 'Press Start 2P', monospace;
+  font: 10px/1.6 'Press Start 2P', monospace;
   text-transform: uppercase;
   white-space: nowrap;
 }
