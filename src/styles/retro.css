@@ -139,6 +139,23 @@
   box-shadow: var(--drop), 0 0 28px rgb(124 58 237 / 0.4);
 }
 
+/*
+ * Portrait (phones): a landscape-shaped box would shrink to a thin strip with the HUD
+ * panels crowding it, so the frame fills the stage instead and the map covers it (see
+ * FitMinZoom), cropping the basemap's long axis rather than letterboxing it.
+ */
+@media (orientation: portrait) {
+  .app-stage {
+    --frame-pad: 4px;
+  }
+
+  .map-frame {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: auto;
+  }
+}
+
 /* --- Slabs ---------------------------------------------------------------------------- */
 
 .slab {
