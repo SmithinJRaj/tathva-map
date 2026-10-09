@@ -20,7 +20,7 @@ export default defineConfig({
     basicSsl(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icons/apple-icon-180.png'],
+      includeAssets: ['favicon.png', 'icons/apple-icon-180.png'],
       manifest: {
         name: 'Tathva Campus Map',
         short_name: 'Tathva Map',
