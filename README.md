@@ -284,6 +284,37 @@ route can only reach the path outside a building, and that is 23 m from the cent
 and 56 m from the centre of the worst building here; measuring to the centre would mean never
 quite arriving.
 
+## Deploying
+
+The attendee app is a static build; `vercel.json` carries the config.
+
+```bash
+npm run static-schedule   # optional, see below
+npm run build             # -> dist/
+```
+
+Two things in that config are load-bearing. `/admin` is client-routed from the same
+`index.html`, so it needs a rewrite or a direct visit 404s. And `sw.js`,
+`manifest.webmanifest` and `index.html` must **not** be cached long: Vite fingerprints
+everything under `/assets`, but these keep their names, and a service worker cached for a
+year is one you can never replace. Do not add a catch-all SPA rewrite — it would swallow
+`/api/schedule` and serve the app shell in its place.
+
+### Running without the schedule service
+
+`npm run static-schedule` reads the CSV exports in `csv/` and writes `public/api/schedule`,
+which Vite copies into the build. The app only ever reads `GET /api/schedule`, so a static
+file there is indistinguishable from the service: same shape, same ETag and 304 from the
+host, same offline cache on the client. What it cannot do is change — no admin edits, no
+WhatsApp bridge — which is the trade while the service has nowhere to run.
+
+It is generated here and committed, rather than built on the host, because the CSVs carry
+volunteers' names and phone numbers and are gitignored for that reason. The generated file
+carries neither: the contact columns are unmapped, so they never reach it.
+
+To switch to the live service: delete `public/api/schedule` and point `/api/*` at the
+service (a Vercel rewrite, or nginx as in `server/README.md`).
+
 ## Attribution
 
 Map data and tiles © OpenStreetMap contributors, [ODbL](https://www.openstreetmap.org/copyright).

@@ -27,3 +27,7 @@ dist-ssr
 *.db
 *.db-wal
 *.db-shm
+
+# Event sheet exports: these carry volunteers names and phone numbers.
+# The schedule published from them (public/api/schedule) carries neither.
+csv/
