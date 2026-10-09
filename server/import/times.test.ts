@@ -65,3 +65,18 @@ test('refuses nonsense rather than reading part of it', () => {
   expect(ranges('25:00 to 26:00')).toMatch(/could not read/)
   expect(ranges('9am to')).toMatch(/could not read|only a start/)
 })
+
+test('refuses a bare hour next to one that names am or pm', () => {
+  // "2 to 4pm" means 14:00. Read as 02:00 it is still a valid range, so nothing downstream
+  // would catch the twelve-hour error — it has to be refused here or not at all.
+  expect(ranges('2 to 4pm')).toMatch(/only one end/)
+  expect(ranges('10-5pm')).toMatch(/only one end/)
+  expect(ranges('2pm to 4')).toMatch(/only one end/)
+  // Even when a bare hour would happen to be right, it is still a guess.
+  expect(ranges('9 to 6pm')).toMatch(/only one end/)
+})
+
+test('still reads a range where both ends agree', () => {
+  expect(ranges('9am to 6pm')).toEqual([{ start: '09:00', end: '18:00' }])
+  expect(ranges('09:00 to 18:00')).toEqual([{ start: '09:00', end: '18:00' }])
+})

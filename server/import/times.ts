@@ -33,6 +33,8 @@ const RANGE_SEPARATOR = /\s*(?:-|–|—|to|till|until)\s*/i
 /** "9am", "2 PM", "5 P M", "11:30pm", "18:00". Spaces inside "P M" are tolerated. */
 const CLOCK = /^(\d{1,2})(?::(\d{2}))?\s*(?:([ap])\s*\.?\s*m\s*\.?)?$/i
 
+const hasMeridiem = (text: string) => /[ap]\s*\.?\s*m\s*\.?\s*$/i.test(text.trim())
+
 function toMinutes(text: string): number | null {
   const m = CLOCK.exec(text.trim())
   if (!m) return null
@@ -74,6 +76,17 @@ export function parseTimeRange(text: string): TimeParse {
           : `could not read "${session.trim()}" as a time range`,
       }
     }
+    // "2 to 4pm" means 14:00, not 02:00 — but 02:00 to 16:00 is a perfectly valid range, so
+    // nothing downstream would catch the twelve-hour error. A bare hour beside one that
+    // names am or pm is genuinely ambiguous, and the only safe reading is to refuse it.
+    // Either both ends say, or neither does and it is read as a 24-hour clock.
+    if (hasMeridiem(parts[0]) !== hasMeridiem(parts[1])) {
+      return {
+        kind: 'unparsed',
+        reason: `"${session.trim()}" says am/pm on only one end, so the other could be either`,
+      }
+    }
+
     const start = toMinutes(parts[0])
     const end = toMinutes(parts[1])
     if (start === null || end === null) {
