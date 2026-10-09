@@ -13,7 +13,8 @@
     "server:start": "tsx server/index.ts",
     "admin": "tsx server/scripts/admin.ts",
     "import-schedule": "tsx server/scripts/import-schedule.ts",
-    "static-schedule": "tsx server/scripts/static-schedule.ts"
+    "static-schedule": "tsx server/scripts/static-schedule.ts",
+    "snapshot-schedule": "tsx server/scripts/snapshot-schedule.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",
