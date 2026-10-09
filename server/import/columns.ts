@@ -84,6 +84,13 @@ export const VENUE_ALIASES: Record<string, string> = {
   'kho kho': 'volleyball_court',
   'archi dept': 'department_of_architecture_and_plannning',
   'abc hall': 'abc_auditorium_complex',
+  /*
+   * A fest-week name for the ABC complex, not a place on any map: no name in the campus data
+   * matched it under any spelling, which is why it was asked rather than guessed. The user
+   * confirmed it means the whole complex, so the stalls written "dhwani" and "near dhwani"
+   * both pin the building — the locative strip reduces the second one once this is known.
+   */
+  dhwani: 'abc_auditorium_complex',
   aryabatta: 'aryabhatta_park',
   aryabhatta: 'aryabhatta_park',
   'football ground': 'nit_football_ground',

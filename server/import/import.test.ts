@@ -301,12 +301,22 @@ test('a venue written as a direction resolves to its landmark', () => {
   expect(match('right side of audi')?.placeId).toBe('auditorium')
   expect(match('in front of pg block')?.placeId).toBe('pg_block')
   expect(match('Near Amphi')?.placeId).toBe('green_amphitheatre')
+  // "dhwani" is a fest-week name for the ABC complex, so this one only works once the alias
+  // is in; before it was, this was the example of a landmark no map could place.
+  expect(match('near dhwani')?.placeId).toBe('abc_auditorium_complex')
 })
 
 test('a direction toward somewhere unknown is still unknown', () => {
   // Stripping the preposition must not make an unplaceable venue look placed.
-  expect(match('near dhwani')).toBeNull()
+  expect(match('near the blue tent')).toBeNull()
   expect(match('in')).toBeNull()
+})
+
+test('dhwani is the whole ABC complex, however it is written', () => {
+  // Confirmed by the user, not inferred: no name in the campus data matched it under any
+  // spelling, and "Grounds" is a type word rather than a room inside the complex.
+  expect(match('dhwani')).toEqual({ placeId: 'abc_auditorium_complex', room: null })
+  expect(match('Dhwani Grounds')).toEqual({ placeId: 'abc_auditorium_complex', room: null })
 })
 
 test('a confirmed multi-place venue resolves; an unconfirmed one still does not', () => {
