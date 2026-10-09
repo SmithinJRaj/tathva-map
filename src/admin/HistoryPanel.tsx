@@ -1,42 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { formatIstDay, formatIstTime, istDateKey } from '../../shared/ist.ts'
-import { knownPlaces } from '../../shared/places.ts'
-import type { ScheduleEvent } from '../../shared/schedule.ts'
 import { adminApi, ApiError, type AuditEntry } from './api.ts'
+import { changes, when } from './auditDiff.ts'
 
 interface Props {
   eventId: string
   onUnauthorized?: () => void
-}
-
-const FIELDS = [
-  'title', 'description', 'category', 'placeId', 'room', 'startAt', 'endAt',
-  'originalStartAt', 'status', 'note',
-] as const satisfies readonly (keyof ScheduleEvent)[]
-
-const TIME_FIELDS: ReadonlySet<string> = new Set(['startAt', 'endAt', 'originalStartAt'])
-
-function show(field: string, v: unknown): string {
-  if (v === null || v === undefined || v === '') return '—'
-  if (TIME_FIELDS.has(field)) {
-    const iso = String(v)
-    return `${formatIstDay(istDateKey(iso))} ${formatIstTime(iso)}`
-  }
-  if (field === 'placeId') return knownPlaces.get(String(v)) ?? String(v)
-  return String(v)
-}
-
-function changes(entry: AuditEntry): { field: string; before: string; after: string }[] {
-  if (!entry.before || !entry.after) return []
-  return FIELDS.filter((f) => entry.before![f] !== entry.after![f]).map((field) => ({
-    field,
-    before: show(field, entry.before![field]),
-    after: show(field, entry.after![field]),
-  }))
-}
-
-function when(iso: string): string {
-  return `${formatIstDay(istDateKey(iso))} ${formatIstTime(iso)}`
 }
 
 export function HistoryPanel({ eventId, onUnauthorized }: Props) {

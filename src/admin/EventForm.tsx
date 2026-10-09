@@ -8,50 +8,25 @@ import {
   type ScheduleEvent,
 } from '../../shared/schedule.ts'
 import { adminApi, ApiError } from './api.ts'
+import { draftOf, type EventDraft } from './eventDraft.ts'
 import { HistoryPanel } from './HistoryPanel.tsx'
-import { fromIstInputs, toIstInputs } from './istInputs.ts'
+import { fromIstInputs } from './istInputs.ts'
 import { VenuePicker } from './VenuePicker.tsx'
 
-/** Everything the form holds as typed, so it survives a trip through the login screen. */
-export interface EventDraft {
-  title: string
-  description: string
-  category: Category
-  placeId: string
-  room: string
-  startDate: string
-  startTime: string
-  endDate: string
-  endTime: string
-  note: string
-  correction: boolean
-}
+export type { EventDraft }
 
 interface Props {
   event?: ScheduleEvent
   draft?: EventDraft
+  /**
+   * What the announcement parser could not work out. Shown above the fields, and deliberately
+   * not blocking: the save button stays live so the person reading can fill in what it missed.
+   */
+  problems?: string[]
   onDraftChange?: (draft: EventDraft) => void
   onSaved: (event: ScheduleEvent) => void
   onCancel: () => void
   onUnauthorized?: () => void
-}
-
-function draftOf(event?: ScheduleEvent): EventDraft {
-  const start = event ? toIstInputs(event.startAt) : { date: '', time: '' }
-  const end = event ? toIstInputs(event.endAt) : { date: '', time: '' }
-  return {
-    title: event?.title ?? '',
-    description: event?.description ?? '',
-    category: event?.category ?? 'other',
-    placeId: event?.placeId ?? '',
-    room: event?.room ?? '',
-    startDate: start.date,
-    startTime: start.time,
-    endDate: end.date,
-    endTime: end.time,
-    note: event?.note ?? '',
-    correction: false,
-  }
 }
 
 const orNull = (s: string) => s.trim() || null
@@ -68,7 +43,7 @@ function Row({ label, error, children }: { label: string; error?: string; childr
   )
 }
 
-export function EventForm({ event, draft, onDraftChange, onSaved, onCancel, onUnauthorized }: Props) {
+export function EventForm({ event, draft, problems, onDraftChange, onSaved, onCancel, onUnauthorized }: Props) {
   // The stored event the edit is measured against; a 409 "reload" replaces it.
   const [base, setBase] = useState(event)
   const [v, setV] = useState<EventDraft>(() => draft ?? draftOf(event))
@@ -176,6 +151,18 @@ export function EventForm({ event, draft, onDraftChange, onSaved, onCancel, onUn
   return (
     <form className="slab admin-form" onSubmit={submit} noValidate>
       <h1 className="pix admin-title">{base ? 'Edit event' : 'Add event'}</h1>
+
+      {problems && problems.length > 0 && (
+        <div className="slab form-problems" role="status">
+          <p className="term">The text was read, but not all of it:</p>
+          <ul className="term">
+            {problems.map((p) => (
+              <li key={p}>{p}</li>
+            ))}
+          </ul>
+          <p className="term admin-note">Fill in the rest below. Nothing is saved until you press Create.</p>
+        </div>
+      )}
 
       <Row label="Title" error={errors.title}>
         <input className="term" value={v.title} onChange={(e) => set({ title: e.target.value })} maxLength={120} required />

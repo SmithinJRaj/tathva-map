@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify'
 import type Database from 'better-sqlite3'
 import {
@@ -7,6 +8,7 @@ import {
   deleteSession,
   getSessionAdmin,
 } from '../auth.ts'
+import { normaliseAnnouncement } from '../import/announcement.ts'
 import type { Store } from '../store.ts'
 import {
   cancelSchema,
@@ -19,13 +21,36 @@ import {
 
 const SESSION_COOKIE = 'tm_session'
 
+/**
+ * The WhatsApp bridge's announcement parser. It holds the model's API key, so it is published
+ * nowhere and reachable only on the internal network; the browser never calls it. This service
+ * relays the call so the parse sits behind `requireAdmin` — each one spends model quota, and an
+ * open parse endpoint is a free language model for whoever finds it.
+ */
+const DEFAULT_ANNOUNCEMENT_URL = 'http://whatsapp:4000/api/parse-announcement'
+
+/** A caption, not a document. Long enough for any poster, short enough not to be a bill. */
+const MAX_ANNOUNCEMENT_CHARS = 4000
+
+/** The bridge calls a model, which is slow; but a volunteer should not wait forever either. */
+const ANNOUNCEMENT_TIMEOUT_MS = 25_000
+
+const parseRequestSchema = z.object({
+  text: z.string().trim().min(1, 'Paste the announcement text first').max(MAX_ANNOUNCEMENT_CHARS),
+})
+
 interface Deps {
   db: Database.Database
   store: Store
   cookieSecure: boolean
+  /** Where the bridge's parser lives; unset uses the compose-network default. */
+  announcementUrl?: string
 }
 
-export const adminRoutes: FastifyPluginAsync<Deps> = async (app, { db, store, cookieSecure }) => {
+export const adminRoutes: FastifyPluginAsync<Deps> = async (
+  app,
+  { db, store, cookieSecure, announcementUrl = process.env.ANNOUNCEMENT_URL || DEFAULT_ANNOUNCEMENT_URL },
+) => {
   /** The raw session token from the signed cookie, or null if absent or tampered with. */
   function sessionToken(req: FastifyRequest): string | null {
     const raw = req.cookies[SESSION_COOKIE]
@@ -106,8 +131,39 @@ export const adminRoutes: FastifyPluginAsync<Deps> = async (app, { db, store, co
       return reply.code(204).send()
     })
 
-    admin.get<{ Querystring: { event?: string } }>('/api/admin/audit', async (req) =>
-      store.audit(req.query.event),
+    const auditQuerySchema = z.object({
+      event: z.string().optional(),
+      limit: z.coerce.number().int().min(1).max(1000).optional(),
+    })
+
+    admin.get('/api/admin/audit', async (req) => {
+      const { event, limit } = auditQuerySchema.parse(req.query)
+      return store.audit(event, limit)
+    })
+
+    // Reads text and proposes; writes nothing. Saving the draft is a separate, deliberate POST
+    // by the person who read it.
+    admin.post(
+      '/api/admin/parse',
+      { config: { rateLimit: { max: 40, timeWindow: '10 minutes' } } },
+      async (req, reply) => {
+        const { text } = parseRequestSchema.parse(req.body)
+        let answer: unknown
+        try {
+          const res = await fetch(announcementUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text }),
+            signal: AbortSignal.timeout(ANNOUNCEMENT_TIMEOUT_MS),
+          })
+          if (!res.ok) throw new Error(`parser returned ${res.status}`)
+          answer = await res.json()
+        } catch (err) {
+          req.log.warn({ err, announcementUrl }, 'announcement parser unreachable')
+          return reply.code(502).send({ error: 'parser_unavailable' })
+        }
+        return normaliseAnnouncement(answer)
+      },
     )
   })
 }

@@ -86,8 +86,52 @@
   margin-bottom: 12px;
 }
 
-.admin-add {
+.admin-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-bottom: 16px;
+}
+
+/* The bulk bar sits between the tools and the list it acts on, so what it will change is
+   visible underneath it while it is being filled in. */
+.admin-bulk {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 12px;
+  border-color: var(--amber);
+}
+
+.admin-bulk-title {
+  margin: 0;
+  color: var(--amber);
+}
+
+.admin-bulk-fields {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.admin-bulk-report {
+  margin-bottom: 16px;
+  padding: 12px;
+}
+
+.admin-bulk-report ul {
+  margin: 8px 0 0;
+  padding-left: 16px;
+  color: var(--amber);
+}
+
+/* A touch target, not a 13 px tick: this is pressed on a phone, repeatedly, in a hurry. */
+.admin-pick {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
 }
 
 .admin-day {
@@ -172,6 +216,10 @@
   .admin-item {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .admin-bulk-fields {
+    grid-template-columns: 1fr 1fr;
   }
 }
 
@@ -302,6 +350,57 @@
 .history-item {
   padding: 8px 0;
   border-top: 2px solid var(--panel);
+}
+
+.audit-log {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.audit-log .history-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 10px 12px;
+  border-top: 0;
+}
+
+.audit-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  color: var(--muted);
+}
+
+.audit-head strong {
+  color: var(--cyan);
+}
+
+.audit-message {
+  margin-bottom: 12px;
+  color: var(--cyan);
+}
+
+/* What the text reader could not work out. Amber, not red: the draft is still usable, and the
+   form below it is where it gets finished. */
+.form-problems {
+  padding: 10px 12px;
+  border-color: var(--amber);
+}
+
+.form-problems p {
+  margin: 0;
+}
+
+.form-problems ul {
+  margin: 6px 0;
+  padding-left: 16px;
+  color: var(--amber);
 }
 
 .history-changes {

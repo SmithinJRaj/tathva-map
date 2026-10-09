@@ -23,6 +23,8 @@ export interface AppOptions {
   logger?: boolean
   /** Passed to Fastify; set when behind a reverse proxy so req.ip is the real client. */
   trustProxy?: boolean | string | ((address: string, hop: number) => boolean)
+  /** The WhatsApp bridge's announcement parser; unset uses ANNOUNCEMENT_URL or the default. */
+  announcementUrl?: string
 }
 
 export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
@@ -48,7 +50,12 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
   })
 
   await app.register(publicRoutes, { store })
-  await app.register(adminRoutes, { db: opts.db, store, cookieSecure: opts.cookieSecure })
+  await app.register(adminRoutes, {
+    db: opts.db,
+    store,
+    cookieSecure: opts.cookieSecure,
+    announcementUrl: opts.announcementUrl,
+  })
 
   return app
 }

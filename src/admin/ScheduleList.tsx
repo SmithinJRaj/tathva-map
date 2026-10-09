@@ -2,11 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { eventState, type EventState } from '../../shared/classify.ts'
 import { istDateKey } from '../../shared/ist.ts'
 import { knownPlaces } from '../../shared/places.ts'
-import type { ScheduleEvent } from '../../shared/schedule.ts'
+import { CATEGORIES, type Category, type ScheduleEvent } from '../../shared/schedule.ts'
 import { EventRow } from '../components/EventRow.tsx'
 import { dayLabel } from '../schedule/festDays.ts'
 import { useNow } from '../schedule/useNow.ts'
 import { adminApi, ApiError, type Admin } from './api.ts'
+import { bulkChange, emptyBulkEdit, hasBulkEdit, type BulkEdit } from './bulk.ts'
 import { filterEvents, type AdminFilters } from './filters.ts'
 
 interface Props {
@@ -14,8 +15,14 @@ interface Props {
   onLogout: () => void
   onUnauthorized: () => void
   onAdd?: () => void
+  onPaste?: () => void
+  onHistory?: () => void
   onEdit?: (event: ScheduleEvent) => void
 }
+
+const allVenues = [...knownPlaces.entries()]
+  .map(([id, name]) => ({ id, name }))
+  .sort((a, b) => a.name.localeCompare(b.name))
 
 interface Toast {
   text: string
@@ -31,13 +38,18 @@ function parseMinutes(raw: string | null): number | null {
   return Number.isInteger(n) && n !== 0 && Math.abs(n) <= 1440 ? n : null
 }
 
-export function ScheduleList({ admin, onLogout, onUnauthorized, onAdd, onEdit }: Props) {
+export function ScheduleList({ admin, onLogout, onUnauthorized, onAdd, onPaste, onHistory, onEdit }: Props) {
   const now = useNow()
   const [events, setEvents] = useState<ScheduleEvent[]>([])
   const [loaded, setLoaded] = useState(false)
   const [offline, setOffline] = useState(false)
   const [toast, setToast] = useState<Toast | null>(null)
   const [filters, setFilters] = useState<AdminFilters>({ day: null, placeId: null, state: null, search: '' })
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set())
+  const [edit, setEdit] = useState<BulkEdit>(emptyBulkEdit)
+  const [bulkBusy, setBulkBusy] = useState(false)
+  /** Kept on screen rather than in a toast: a partial failure is the thing you must read. */
+  const [bulkReport, setBulkReport] = useState<{ done: string; failures: string[] } | null>(null)
   const toastTimer = useRef<number | undefined>(undefined)
 
   /** A 401 sends the organiser back to login; a network failure raises the banner. */
@@ -166,6 +178,99 @@ export function ScheduleList({ admin, onLogout, onUnauthorized, onAdd, onEdit }:
     delay(e, minutes)
   }
 
+  const toggle = (id: string) =>
+    setSelected((cur) => {
+      const next = new Set(cur)
+      if (!next.delete(id)) next.add(id)
+      return next
+    })
+
+  /**
+   * Applies one change to every selected event, one request each.
+   *
+   * Sequential and tolerant on purpose. Each write carries that event's own `updatedAt`, so an
+   * event the bridge moved while the selection sat open fails its own lock and the rest still
+   * go through; aborting the lot on the first failure would leave a half-applied batch with no
+   * record of which half. The selection is left holding exactly what failed, so the fix is to
+   * read the reasons and press Apply again.
+   */
+  async function applyBulk() {
+    if (!hasBulkEdit(edit)) {
+      showToast({ text: 'Fill in a time, venue or type first' })
+      return
+    }
+    setBulkBusy(true)
+    setBulkReport(null)
+    let fresh: ScheduleEvent[]
+    try {
+      // Re-read before writing: the list may be up to 30 s stale, and a stale updatedAt would
+      // fail every lock at once.
+      fresh = (await adminApi.schedule()).events
+      setEvents(fresh)
+      setOffline(false)
+    } catch (err) {
+      setBulkBusy(false)
+      handleError(err)
+      showToast({ text: "Couldn't re-read the schedule, so nothing was changed" })
+      return
+    }
+
+    const byId = new Map(fresh.map((e) => [e.id, e]))
+    const failures: string[] = []
+    const stillSelected = new Set<string>()
+    let changed = 0
+    let unchanged = 0
+
+    for (const id of selected) {
+      const event = byId.get(id)
+      if (!event) {
+        failures.push('one event no longer exists')
+        continue
+      }
+      const change = bulkChange(event, edit)
+      if (change.kind === 'skip') {
+        unchanged++
+        continue
+      }
+      if (change.kind === 'invalid') {
+        failures.push(`${event.title}: ${change.reason}`)
+        stillSelected.add(id)
+        continue
+      }
+      try {
+        await adminApi.patch(event.id, {
+          ...change.fields,
+          updatedAt: event.updatedAt,
+          ...(change.correction ? { correction: true } : {}),
+        })
+        changed++
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 401) {
+          setBulkBusy(false)
+          onUnauthorized()
+          return
+        }
+        failures.push(
+          `${event.title}: ${
+            err instanceof ApiError && err.status === 409
+              ? `changed by ${err.current?.updatedBy ?? 'someone else'} meanwhile`
+              : 'the server rejected it'
+          }`,
+        )
+        stillSelected.add(id)
+      }
+    }
+
+    setBulkBusy(false)
+    setSelected(stillSelected)
+    if (failures.length === 0) setEdit(emptyBulkEdit)
+    const parts = [`${changed} updated`]
+    if (unchanged > 0) parts.push(`${unchanged} already as asked`)
+    if (failures.length > 0) parts.push(`${failures.length} not changed`)
+    setBulkReport({ done: parts.join(', '), failures })
+    void refetch()
+  }
+
   const days = useMemo(
     () => [...new Set(events.map((e) => istDateKey(e.startAt)))].sort(),
     [events],
@@ -192,6 +297,9 @@ export function ScheduleList({ admin, onLogout, onUnauthorized, onAdd, onEdit }:
 
   const today = istDateKey(now)
   const set = (patch: Partial<AdminFilters>) => setFilters((f) => ({ ...f, ...patch }))
+  const setEditField = (patch: Partial<BulkEdit>) => setEdit((e) => ({ ...e, ...patch }))
+  const shownIds = useMemo(() => groups.flatMap(([, list]) => list.map((e) => e.id)), [groups])
+  const allShownSelected = shownIds.length > 0 && shownIds.every((id) => selected.has(id))
 
   return (
     <div className="admin-list">
@@ -254,9 +362,110 @@ export function ScheduleList({ admin, onLogout, onUnauthorized, onAdd, onEdit }:
         </label>
       </div>
 
-      <button type="button" className="btn btn-primary admin-add" onClick={onAdd}>
-        Add event
-      </button>
+      <div className="admin-tools">
+        <button type="button" className="btn btn-primary" onClick={onAdd}>
+          Add event
+        </button>
+        <button type="button" className="btn" onClick={onPaste}>
+          Add from text
+        </button>
+        <button type="button" className="btn btn-ghost" onClick={onHistory}>
+          History
+        </button>
+        <button
+          type="button"
+          className="btn btn-ghost"
+          onClick={() => setSelected(allShownSelected ? new Set() : new Set(shownIds))}
+          disabled={shownIds.length === 0}
+        >
+          {allShownSelected ? 'Clear selection' : `Select all ${shownIds.length}`}
+        </button>
+      </div>
+
+      {selected.size > 0 && (
+        <div className="slab admin-bulk">
+          <h2 className="pix-sm admin-bulk-title">
+            Change {selected.size} event{selected.size === 1 ? '' : 's'}
+          </h2>
+          <p className="term admin-note">Anything left blank stays as it is. Times are IST, on each event's own day.</p>
+          <div className="admin-bulk-fields">
+            <label className="field">
+              <span className="field-tag pix-sm">Start</span>
+              <input
+                type="time"
+                className="term"
+                value={edit.startTime}
+                onChange={(e) => setEditField({ startTime: e.target.value })}
+                aria-label="New start time"
+              />
+            </label>
+            <label className="field">
+              <span className="field-tag pix-sm">End</span>
+              <input
+                type="time"
+                className="term"
+                value={edit.endTime}
+                onChange={(e) => setEditField({ endTime: e.target.value })}
+                aria-label="New end time"
+              />
+            </label>
+            <label className="field">
+              <span className="field-tag pix-sm">Venue</span>
+              <select value={edit.placeId} onChange={(e) => setEditField({ placeId: e.target.value })}>
+                <option value="">Leave as is</option>
+                {allVenues.map((v) => (
+                  <option key={v.id} value={v.id}>{v.name}</option>
+                ))}
+              </select>
+              <span className="field-caret">▾</span>
+            </label>
+            <label className="field">
+              <span className="field-tag pix-sm">Type</span>
+              <select value={edit.category} onChange={(e) => setEditField({ category: e.target.value as Category | '' })}>
+                <option value="">Leave as is</option>
+                {CATEGORIES.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+              <span className="field-caret">▾</span>
+            </label>
+          </div>
+          <label className="term form-check">
+            <input
+              type="checkbox"
+              checked={edit.correction}
+              onChange={(e) => setEditField({ correction: e.target.checked })}
+            />
+            Correction — don't show these as delayed
+          </label>
+          <div className="form-actions">
+            <button type="button" className="btn btn-primary" onClick={() => void applyBulk()} disabled={bulkBusy}>
+              {bulkBusy ? 'Applying…' : 'Apply'}
+            </button>
+            <button type="button" className="btn btn-ghost" onClick={() => setSelected(new Set())} disabled={bulkBusy}>
+              Deselect all
+            </button>
+          </div>
+        </div>
+      )}
+
+      {bulkReport && (
+        <div className="slab admin-bulk-report term" role="status">
+          <div className="audit-head">
+            <span>{bulkReport.done}</span>
+            <button type="button" className="btn btn-ghost" onClick={() => setBulkReport(null)}>
+              Dismiss
+            </button>
+          </div>
+          {bulkReport.failures.length > 0 && (
+            <ul>
+              {bulkReport.failures.map((f) => (
+                <li key={f}>{f}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {!loaded && !offline && <p className="term admin-note">Loading…</p>}
       {loaded && groups.length === 0 && <p className="term admin-note">No events match.</p>}
@@ -270,6 +479,13 @@ export function ScheduleList({ admin, onLogout, onUnauthorized, onAdd, onEdit }:
               return (
                 <li key={e.id} className="admin-item">
                   <div className="admin-item-body">
+                    <input
+                      type="checkbox"
+                      className="admin-pick"
+                      checked={selected.has(e.id)}
+                      onChange={() => toggle(e.id)}
+                      aria-label={`Select ${e.title}`}
+                    />
                     <EventRow event={e} now={now} showVenue />
                     <span className="chip admin-state" data-state={state}>{state}</span>
                   </div>

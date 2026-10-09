@@ -43,7 +43,8 @@ export interface Store {
   cancel(id: string, note: string | undefined, admin: string, expectedUpdatedAt?: string): ScheduleEvent
   restore(id: string, note: string | undefined, admin: string, expectedUpdatedAt?: string): ScheduleEvent
   remove(id: string, admin: string): void
-  audit(eventId?: string): AuditEntry[]
+  /** Newest first. `limit` caps the whole-log view, which the admin panel pages through. */
+  audit(eventId?: string, limit?: number): AuditEntry[]
   findByTitleAndDay(title: string, dateKey: string): ScheduleEvent | null
 }
 
@@ -224,10 +225,12 @@ export function createStore(db: Database.Database): Store {
       })()
     },
 
-    audit(eventId) {
+    audit(eventId, limit = 500) {
       const rows = eventId
-        ? db.prepare<[string], AuditRow>('SELECT * FROM audit_log WHERE event_id = ? ORDER BY id DESC').all(eventId)
-        : db.prepare<[], AuditRow>('SELECT * FROM audit_log ORDER BY id DESC').all()
+        ? db
+            .prepare<[string, number], AuditRow>('SELECT * FROM audit_log WHERE event_id = ? ORDER BY id DESC LIMIT ?')
+            .all(eventId, limit)
+        : db.prepare<[number], AuditRow>('SELECT * FROM audit_log ORDER BY id DESC LIMIT ?').all(limit)
       return rows.map(rowToAudit)
     },
 

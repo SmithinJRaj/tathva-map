@@ -17,6 +17,7 @@ Environment variables only.
 | `HOST` | `127.0.0.1` | Listen address. |
 | `COOKIE_SECURE` | `true` | Set `false` only for plain-HTTP local runs. |
 | `TRUST_PROXY` | off | **Set to `1` when nginx (or any proxy) runs on the same box.** See below. |
+| `ANNOUNCEMENT_URL` | `http://whatsapp:4000/api/parse-announcement` | The WhatsApp bridge's text reader, for "Add from text". Nothing breaks if it is unreachable — that one button reports it and the rest of the GUI is unaffected. |
 
 **TRUST_PROXY matters.** The login rate limit (10 attempts / 15 min / IP) keys on the client
 IP. Behind a reverse proxy without `TRUST_PROXY`, every user shares the proxy's IP, so ten
@@ -46,6 +47,45 @@ npm run admin -- remove <username>    # deletes the account and signs it out
 
 Prompts for a password (not echoed). Running it again for an existing username replaces the
 password and signs that admin out everywhere. The display name is what the audit log and "changed by" messages show.
+
+## Adding events from pasted text
+
+`/admin` → **Add from text** takes a poster caption and fills the ordinary event form in. The
+parse happens on the WhatsApp bridge, which asks a language model to read it; this service only
+relays the call, so the browser never talks to the bridge and the parse sits behind the admin
+session. That matters for more than tidiness: each call spends model quota, and an open parse
+endpoint is a free language model for whoever finds it.
+
+Nothing on that path writes. The answer is validated field by field here (`import/announcement.ts`)
+and anything that does not survive is **dropped and listed** rather than stored — an unknown
+venue, a time that will not parse, a category that is not one of ours, or the literal string
+`"Null"`, which is how an absent optional field can come back from a model that answers in prose.
+The event exists only once a person has read the draft and pressed Create.
+
+## Bulk edits
+
+Tick several events in the list and one change — start time, end time, venue, type — applies to
+all of them, each on its own day. It exists for imported placeholder windows: a couple of dozen
+events timed 09:00–18:00 each look live for nine hours, and fixing them one at a time is a couple
+of dozen round trips.
+
+**Correction** is on by default there, because resetting a placeholder window is a fix, not a
+delay, and marking two dozen events "delayed" would tell attendees something untrue.
+
+Each event is written separately with its own `updatedAt`, so one that the bridge moved while the
+selection sat open fails its own check and the rest still go through. What failed stays ticked,
+with the reason, so pressing Apply again retries exactly those.
+
+## History and reverting
+
+`/admin` → **History** is the audit log: who changed what, when, with before and after. Sheet
+imports are hidden by default, since there are a hundred-odd of them.
+
+**Revert** writes the fields of one entry back. It deliberately does not write the whole stored
+row back, because that would restore `updatedBy` too: a revert of a bot's change would look like
+an import, which would hand the event back to the sheet-overwrite rule and let the next sync
+silently undo the revert. Reverting the fields as the admin doing it keeps the history honest —
+the revert appears in the log as its own edit — and keeps that protection.
 
 ## Importing the events sheet
 

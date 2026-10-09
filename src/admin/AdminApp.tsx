@@ -1,14 +1,21 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { ScheduleEvent } from '../../shared/schedule.ts'
 import { adminApi, ApiError, type Admin } from './api.ts'
-import { EventForm, type EventDraft } from './EventForm.tsx'
+import { AuditLog } from './AuditLog.tsx'
+import { EventForm } from './EventForm.tsx'
+import { draftFromParsed, type EventDraft } from './eventDraft.ts'
 import { LoginForm } from './LoginForm.tsx'
+import { PasteForm } from './PasteForm.tsx'
 import { ScheduleList } from './ScheduleList.tsx'
 import './admin.css'
 
 type Session = { phase: 'loading' } | { phase: 'login' } | { phase: 'in'; admin: Admin } | { phase: 'offline' }
 
-type View = { page: 'list' } | { page: 'form'; event?: ScheduleEvent; draft?: EventDraft }
+type View =
+  | { page: 'list' }
+  | { page: 'paste' }
+  | { page: 'history' }
+  | { page: 'form'; event?: ScheduleEvent; draft?: EventDraft; problems?: string[] }
 
 export default function AdminApp() {
   const [session, setSession] = useState<Session>({ phase: 'loading' })
@@ -64,13 +71,30 @@ export default function AdminApp() {
           onLogout={logout}
           onUnauthorized={unauthorized}
           onAdd={() => setView({ page: 'form' })}
+          onPaste={() => setView({ page: 'paste' })}
+          onHistory={() => setView({ page: 'history' })}
           onEdit={(event) => setView({ page: 'form', event })}
         />
+      )}
+      {session.phase === 'in' && view.page === 'paste' && (
+        <PasteForm
+          // Straight into the ordinary form, with what the parser worked out filled in and what
+          // it could not listed above the fields. Nothing is stored until Create.
+          onParsed={(parsed) =>
+            setView({ page: 'form', draft: draftFromParsed(parsed.draft), problems: parsed.problems })
+          }
+          onCancel={toList}
+          onUnauthorized={unauthorized}
+        />
+      )}
+      {session.phase === 'in' && view.page === 'history' && (
+        <AuditLog onBack={toList} onUnauthorized={unauthorized} />
       )}
       {session.phase === 'in' && view.page === 'form' && (
         <EventForm
           event={view.event}
           draft={view.draft}
+          problems={view.problems}
           onDraftChange={trackDraft}
           onSaved={toList}
           onCancel={toList}

@@ -26,6 +26,19 @@ export interface Admin {
   displayName: string
 }
 
+/**
+ * What the announcement parser proposes, after the server has thrown out anything that did not
+ * validate. `draft` holds only the fields that survived, so the form fills what it can and
+ * leaves the rest to the person reading it; `problems` is what to tell them.
+ */
+export interface ParsedAnnouncement {
+  ok: boolean
+  problems: string[]
+  draft: Partial<EventInput>
+  placeName: string | null
+  confidence: string | null
+}
+
 export interface AuditEntry {
   id: number
   at: string
@@ -83,5 +96,12 @@ export const adminApi = {
   restore: (id: string, updatedAt: string) =>
     request<ScheduleEvent>('POST', `${ev(id)}/restore`, { updatedAt }),
   remove: (id: string) => request<void>('DELETE', ev(id)),
-  audit: (id?: string) => request<AuditEntry[]>('GET', `/admin/audit${id ? `?event=${enc(id)}` : ''}`),
+  audit: (id?: string, limit?: number) => {
+    const q = new URLSearchParams()
+    if (id) q.set('event', id)
+    if (limit) q.set('limit', String(limit))
+    return request<AuditEntry[]>('GET', `/admin/audit${q.size ? `?${q}` : ''}`)
+  },
+  // Reads text and proposes a draft. It writes nothing, so a bad parse costs a glance.
+  parse: (text: string) => request<ParsedAnnouncement>('POST', '/admin/parse', { text }),
 }

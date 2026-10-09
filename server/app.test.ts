@@ -1,4 +1,4 @@
-import { beforeEach, expect, test } from 'vitest'
+import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import type { FastifyInstance } from 'fastify'
 import { openDb } from './db.ts'
 import { upsertAdmin } from './auth.ts'
@@ -256,4 +256,85 @@ test('without trustProxy, X-Forwarded-For is ignored by the rate limiter', async
 test('logout works without a session', async () => {
   const res = await app.inject({ method: 'POST', url: '/api/admin/logout' })
   expect(res.statusCode).toBe(204)
+})
+
+const PARSER_URL = 'http://parser.test/api/parse-announcement'
+
+async function appWithParser() {
+  const db = openDb(':memory:')
+  await upsertAdmin(db, 'asha', 'Asha', 'correct-horse')
+  return buildApp({ db, cookieSecret: 'x'.repeat(32), cookieSecure: false, announcementUrl: PARSER_URL })
+}
+
+async function parse(a: FastifyInstance, cookie: string | undefined, text: string) {
+  return a.inject({
+    method: 'POST',
+    url: '/api/admin/parse',
+    headers: cookie ? { cookie } : {},
+    payload: { text },
+  })
+}
+
+afterEach(() => vi.unstubAllGlobals())
+
+test('parsing an announcement needs a session', async () => {
+  const res = await parse(app, undefined, 'Robo Race at 2pm')
+  expect(res.statusCode).toBe(401)
+})
+
+test('a parsed announcement comes back as a draft, and nothing is written', async () => {
+  const parser = await appWithParser()
+  const cookie = await cookieFor(parser)
+  const calls: unknown[] = []
+  vi.stubGlobal('fetch', async (url: string, init: { body: string }) => {
+    calls.push([url, JSON.parse(init.body)])
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        problems: [],
+        draft: { title: 'Robo Race', category: 'competition', placeId, room: 'Null', startAt: '2026-10-10T09:30:00+05:30', endAt: '2026-10-10T11:30:00+05:30' },
+        placeName: knownPlaces.get(placeId),
+        confidence: 'HIGH',
+      }),
+      { headers: { 'Content-Type': 'application/json' } },
+    )
+  })
+  const res = await parse(parser, cookie, 'Robo Race, 9:30 to 11:30 am')
+  expect(res.statusCode).toBe(200)
+  expect(res.json()).toMatchObject({
+    ok: true,
+    problems: [],
+    draft: { title: 'Robo Race', startAt: '2026-10-10T04:00:00.000Z' },
+  })
+  expect(res.json().draft.room).toBeUndefined()
+  expect(calls).toEqual([[PARSER_URL, { text: 'Robo Race, 9:30 to 11:30 am' }]])
+  const list = await parser.inject({ method: 'GET', url: '/api/schedule' })
+  expect((list.json() as ScheduleResponse).events).toEqual([])
+})
+
+test('an unreachable parser is a 502, not a crash', async () => {
+  const parser = await appWithParser()
+  const cookie = await cookieFor(parser)
+  vi.stubGlobal('fetch', async () => {
+    throw new Error('ECONNREFUSED')
+  })
+  const res = await parse(parser, cookie, 'Robo Race at 2pm')
+  expect(res.statusCode).toBe(502)
+  expect(res.json()).toEqual({ error: 'parser_unavailable' })
+})
+
+test('a parser error response is a 502 too', async () => {
+  const parser = await appWithParser()
+  const cookie = await cookieFor(parser)
+  vi.stubGlobal('fetch', async () => new Response('upstream exploded', { status: 500 }))
+  expect((await parse(parser, cookie, 'Robo Race')).statusCode).toBe(502)
+})
+
+test('empty text never reaches the parser', async () => {
+  const cookie = await cookieFor(app)
+  const fetchSpy = vi.fn()
+  vi.stubGlobal('fetch', fetchSpy)
+  const res = await parse(app, cookie, '   ')
+  expect(res.statusCode).toBe(400)
+  expect(fetchSpy).not.toHaveBeenCalled()
 })
