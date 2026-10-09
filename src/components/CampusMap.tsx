@@ -11,7 +11,14 @@ import {
   MAX_BOUNDS_PAD,
   MAX_ZOOM,
 } from '../config/mapConfig'
-import { effectiveCategory, hostPlaceId, placesById, placesWithoutOutline, type PlaceCategory } from '../data/campus'
+import {
+  effectiveCategory,
+  markerPlaceId,
+  placesById,
+  placesWithoutOutline,
+  stagePlaces,
+  type PlaceCategory,
+} from '../data/campus'
 import { useRouting } from '../hooks/useRouting'
 import type { RouteResult } from '../lib/astar'
 import type { TravelMode } from '../lib/graph'
@@ -20,8 +27,9 @@ import { liveDotPlaces } from '../schedule/liveDots'
 import { useScheduleData } from '../schedule/ScheduleContext'
 import { getPlaceLayer, registerPlaceLayer } from './layerRegistry'
 import { LocationLayer } from './LocationLayer'
-import { endpointIcon, liveDotIcon, placeIcon } from './markers'
+import { endpointIcon, liveDotIcon, placeIcon, stageIcon } from './markers'
 import { PlaceLayer } from './PlaceLayer'
+import { popupMaxHeight } from './popupSize'
 import { PLANNER_CLEARANCE_PX, SHEET_PEEK_PX } from './sheetSnap'
 import { PlacePopup } from './PlacePopup'
 
@@ -55,7 +63,9 @@ interface Props {
 function FocusPlace({ focus }: Pick<Props, 'focus'>) {
   const map = useMap()
   useEffect(() => {
-    const hostId = focus ? hostPlaceId(focus.placeId) : undefined
+    // The marker, not the shape: focusing the Informals Stage should open the stage's popup,
+    // not the popup of the junction it stands on.
+    const hostId = focus ? markerPlaceId(focus.placeId) : undefined
     const place = hostId ? placesById.get(hostId) : undefined
     if (!focus || !hostId || !place) return
     let timer: number | undefined
@@ -128,13 +138,24 @@ function ZoomBridge({ onZoomControls }: Pick<Props, 'onZoomControls'>) {
 }
 
 /**
- * Popup autoPan needs to move the view, but with viscosity-1 maxBounds Leaflet snaps it straight
- * back on moveend (at fit zoom the bounds allow no panning at all), leaving a popup near the top
- * hidden under the From/To panel. Lift the bounds while a popup is open; closing it glides back.
+ * Two things every popup needs, handled where the map itself is in scope.
+ *
+ * **Bounds.** Popup autoPan needs to move the view, but with viscosity-1 maxBounds Leaflet snaps
+ * it straight back on moveend (at fit zoom the bounds allow no panning at all), leaving a popup
+ * near the top hidden under the From/To panel. Lift the bounds while a popup is open; closing it
+ * glides back.
+ *
+ * **Height.** A popup is otherwise as tall as its contents, with no way to scroll it: the
+ * Informals Stage lists 21 acts, which ran 1858 px down an 813 px screen. Leaflet fires this on
+ * the map before the source layer, and react-leaflet re-runs the popup layout after rendering
+ * its content, so setting the option here is picked up. Read at open time so it follows a resize.
  */
-function RelaxBoundsWhilePopupOpen() {
+function PopupBehaviour() {
   const map = useMapEvents({
-    popupopen: () => map.setMaxBounds(undefined),
+    popupopen: (e) => {
+      e.popup.options.maxHeight = popupMaxHeight(map)
+      map.setMaxBounds(undefined)
+    },
     popupclose: () => map.setMaxBounds(MAX_PAN_BOUNDS),
   })
   return null
@@ -233,6 +254,31 @@ export function CampusMap({
       <PlaceLayer interactive={!tracing} hidden={hidden} onRouteTo={onRouteTo} />
 
       {/* A polygon already shows where a place is, so only pin the ones mapped as a point. */}
+      {/* The main stages, labelled. They sit on a junction and a ground respectively, so an
+          unlabelled pin there reads as the junction or the ground — which is exactly how the
+          Informals Stage became unfindable. Always shown: hiding the stages is not a thing
+          anyone wants from the legend. */}
+      {stagePlaces.map((place) => (
+        <Marker
+          key={place.id}
+          ref={(marker) => registerPlaceLayer(place.id, marker)}
+          position={place.position}
+          icon={stageIcon(place.name, liveVenueIds.has(place.id))}
+          zIndexOffset={1000}
+        >
+          <Popup
+            pane="popupPane"
+            className="retro-popup"
+            maxWidth={260}
+            minWidth={200}
+            autoPanPaddingTopLeft={[16, PLANNER_CLEARANCE_PX]}
+            autoPanPaddingBottomRight={[16, 16 + SHEET_PEEK_PX]}
+          >
+            <PlacePopup place={place} onRouteTo={onRouteTo} />
+          </Popup>
+        </Marker>
+      ))}
+
       {placesWithoutOutline
         .filter((place) => !hidden.has(effectiveCategory(place, eventVenueIds)))
         .map((place) => (
@@ -261,7 +307,7 @@ export function CampusMap({
       <CoverCampusBounds />
       <FitMinZoom />
       <ZoomBridge onZoomControls={onZoomControls} />
-      <RelaxBoundsWhilePopupOpen />
+      <PopupBehaviour />
       <FocusPlace focus={focus} />
       <RouteLayer
         startId={startId}

@@ -27,6 +27,11 @@ export interface Place {
    * the thing they sit on already is.
    */
   anchoredTo?: string
+  /**
+   * A main-stage fest venue. Anchored like any other, but pinned and labelled in its own right:
+   * the whole point of it is to be found.
+   */
+  stage?: true
   /** Extra words that should find this place when searching; never displayed. */
   aliases?: readonly string[]
   description?: string
@@ -96,6 +101,7 @@ const fest: Place[] = festVenues.flatMap((venue) => {
       driveNodeId: host.driveNodeId,
       floor: 0,
       anchoredTo: host.id,
+      ...(venue.stage ? { stage: true as const } : {}),
       ...withContent(venue.content),
     },
   ]
@@ -130,9 +136,25 @@ export function effectiveCategory(place: Place, eventVenueIds: ReadonlySet<strin
   return eventVenueIds.has(place.id) ? 'event' : place.category
 }
 
+/** The stage venues, pinned and labelled on the map in their own right. */
+export const stagePlaces: Place[] = fest.filter((p) => p.stage)
+
 const hostOf = new Map(places.flatMap((p) => (p.anchoredTo ? [[p.id, p.anchoredTo] as const] : [])))
+const hasOwnMarker = new Set(stagePlaces.map((p) => p.id))
 
 /** The shape a place is drawn as: its host if it is anchored to one, or the place itself. */
 export function hostPlaceId(placeId: string): string {
   return hostOf.get(placeId) ?? placeId
+}
+
+/**
+ * Which marker's popup an event at this place belongs in.
+ *
+ * Not the same question as `hostPlaceId`. A room has no pin of its own, so ELHC 301's events
+ * belong on ELHC's. A stage does have one, so the Informals Stage's acts belong on the stage —
+ * putting them on the ATM Circle, which is what happens when the two questions are conflated,
+ * files the fest's biggest stage under a cash machine.
+ */
+export function markerPlaceId(placeId: string): string {
+  return hasOwnMarker.has(placeId) ? placeId : hostPlaceId(placeId)
 }

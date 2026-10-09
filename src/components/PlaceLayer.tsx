@@ -5,6 +5,7 @@ import { effectiveCategory, placesWithOutline, type PlaceCategory } from '../dat
 import { useScheduleData } from '../schedule/ScheduleContext'
 import { getPlaceLayer, registerPlaceLayer } from './layerRegistry'
 import { PlacePopup } from './PlacePopup'
+import { popupMaxHeight } from './popupSize'
 import { PLANNER_CLEARANCE_PX, SHEET_PEEK_PX } from './sheetSnap'
 
 /** Above the map image (250), below the default overlay pane (400) where the route line lives. */
@@ -50,11 +51,6 @@ const activeStyle = (color: string): L.PathOptions => ({
 // would leave a polygon stuck highlighted. Only react to hover where hover really exists;
 // on touch the popupopen/popupclose handlers give the highlight instead.
 const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches
-
-/** About half the map's height, clamped, so long popups scroll instead of running off-screen. */
-function popupMaxHeight(map: L.Map): number {
-  return Math.min(360, Math.max(200, Math.round(map.getSize().y / 2)))
-}
 
 // Leaflet types event targets as `any`; narrow to the one thing we call on them.
 const pathOf = (e: L.LeafletEvent) => e.target as L.Polygon
