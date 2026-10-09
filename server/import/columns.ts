@@ -62,6 +62,18 @@ export const VENUE_ALIASES: Record<string, string> = {
   'dap nitc': 'department_of_architecture_and_plannning',
   // OSM carries this one itself, as name:en.
   msed: 'material_science_engineering_department',
+  /*
+   * S.M is Strength of Materials, and a strength-of-materials lab is what "material testing
+   * lab" means in a civil-engineering context. Two independent lines agree: the user's
+   * coordinate for it (art px 1464,627) touches the S.M Lab outline — 0 m to its edge, where
+   * centroid distance had made it look like a four-way coin flip — and the art shows no
+   * unnamed building there, so it is an existing shed under another name rather than a place
+   * the map is missing.
+   *
+   * The residual doubt is one shed over: T.E Lab's edge is 5 m away. If anyone reports being
+   * sent to the wrong one, that is the fix, not a new place.
+   */
+  'material testing lab': 's_m_lab',
   // Which of the three halls is unknown, and they share one entrance, so the building is the
   // honest answer rather than a guess at a room.
   amphi: 'green_amphitheatre',
