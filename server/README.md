@@ -176,6 +176,43 @@ sqlite3 "$DB_PATH" ".backup '/path/schedule-$(date +%F).db'"
 
 Safe while the service is running. Do not just `cp` the file.
 
+## Two schedules, and how they drift
+
+`/api/schedule` can be served by two different things, and it is not obvious from the outside
+which one an attendee is reading:
+
+| | Source | Changes when |
+| --- | --- | --- |
+| **The service** | SQLite, this repo's `server/` | Instantly — admin GUI, WhatsApp bridge, importer |
+| **`public/api/schedule`** | A committed file, copied into `dist/` | Only when someone rebuilds and deploys |
+
+A deployment with no backend — Vercel, or any static host — serves the file. The app cannot
+tell the difference: same path, same shape, same ETag behaviour. So the site keeps serving a
+schedule that is perfectly valid and quietly hours old, and nothing anywhere reports it.
+
+**This has already bitten once.** On day 1 the hosted site showed 48 events while the service
+held 115: everything the bridge and the organisers had added since the morning's build was
+missing, including Tathack, both days of Robowars and all 21 informals acts.
+
+Rebuild the file from whichever source is authoritative:
+
+```bash
+npm run static-schedule     # from the CSV exports - before the service exists
+npm run snapshot-schedule   # from the running service - once it does
+```
+
+`static-schedule` only knows what is in the CSVs, so running it once the bridge is live would
+*drop* everything the bridge added. Use `snapshot-schedule` from then on.
+
+**A snapshot is still frozen.** A delay entered at 3pm reaches nobody until the next deploy.
+The real fix is to put the service behind the same origin and let `/api` reach it.
+
+**If you do that on Vercel, delete `public/api/schedule` first.** Vercel checks the filesystem
+before it applies `rewrites`, so a real file at `/api/schedule` wins over a rewrite pointing at
+the backend — the site would go on serving the stale snapshot and the rewrite would look broken
+for no visible reason. After deploying, check with `curl -i https://<host>/api/schedule` that
+the `ETag` changes when an event is edited.
+
 ## What the host needs
 
 - The app and `/api` on the **same origin**: static files at `/`, the API proxied at `/api`.
