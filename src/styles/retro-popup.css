@@ -239,6 +239,20 @@
   background: #130c28;
 }
 
+/* The headline stages. Deliberately placed above the tone and state rules so that a live or
+   starting-soon act keeps its green or amber left border — being on now matters more than
+   being on the main stage. The star carries the marking in those cases. */
+.sheet-body .event-row[data-stage],
+.retro-popup .event-row[data-stage] {
+  border-color: rgb(232 121 249 / 0.4);
+  box-shadow: inset 0 0 14px rgb(232 121 249 / 0.1);
+}
+
+.event-row[data-stage] .event-title::before {
+  content: '\2605\A0';
+  color: var(--magenta);
+}
+
 .sheet-body .event-row[data-tone='soon'],
 .retro-popup .event-row[data-tone='soon'] {
   border-color: rgb(251 191 36 / 0.45);

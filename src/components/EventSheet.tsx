@@ -6,6 +6,7 @@ import { placesById } from '../data/campus'
 import { dayLabel } from '../schedule/festDays'
 import { useScheduleData } from '../schedule/ScheduleContext'
 import { matchesQuery } from '../schedule/search'
+import { stageDays, stageRemaining } from '../schedule/stage'
 import { EventRow } from './EventRow'
 import { nearestSnap, SHEET_PEEK_PX, sheetHeight, type SheetSnap } from './sheetSnap'
 
@@ -13,7 +14,7 @@ interface Props {
   onLocate: (placeId: string) => void
 }
 
-type Tab = 'live' | 'upcoming'
+type Tab = 'live' | 'upcoming' | 'stage'
 
 /** Pointer movement under this many pixels counts as a tap on the handle, not a drag. */
 const TAP_SLOP_PX = 4
@@ -40,6 +41,10 @@ export function EventSheet({ onLocate }: Props) {
     () => classify(events.filter((e) => matchesQuery(e, query)), now),
     [events, now, query],
   )
+  // The stage order is built from the unfiltered list on purpose: the search box filters what
+  // is on, and a running order with acts missing out of the middle is worse than none.
+  const stage = useMemo(() => stageDays(events, now), [events, now])
+  const stageLeft = useMemo(() => stageRemaining(stage, now), [stage, now])
   const searching = query.trim() !== ''
   const upcomingCount = upcomingByDay.reduce((n, day) => n + day.events.length, 0)
   const todayKey = istDateKey(now)
@@ -171,6 +176,16 @@ export function EventSheet({ onLocate }: Props) {
             >
               Up next · {upcomingCount}
             </button>
+            {stage.length > 0 && (
+              <button
+                type="button"
+                className="seg-item"
+                aria-pressed={tab === 'stage'}
+                onClick={() => setTab('stage')}
+              >
+                Stage · {stageLeft}
+              </button>
+            )}
           </div>
         </div>
 
@@ -221,6 +236,22 @@ export function EventSheet({ onLocate }: Props) {
                 ))}
               </div>
             ))
+          ))}
+        {tab === 'stage' &&
+          stage.map((day) => (
+            <div key={day.dateKey}>
+              <h3 className="pix-sm sheet-day">{dayLabel(day.dateKey, todayKey)}</h3>
+              {day.events.map((event) => (
+                <EventRow
+                  key={event.id}
+                  event={event}
+                  now={now}
+                  showVenue
+                  onSelect={locatable(event.placeId)}
+                  shareable
+                />
+              ))}
+            </div>
           ))}
       </div>
     </section>

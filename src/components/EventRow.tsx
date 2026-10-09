@@ -5,6 +5,7 @@ import { knownPlaces } from '../../shared/places.ts'
 import type { ScheduleEvent } from '../../shared/schedule.ts'
 import { shareEvent, type ShareOutcome } from '../lib/shareEvent'
 import { eventStatus } from '../schedule/eventStatus'
+import { isStageEvent } from '../schedule/stage'
 
 interface Props {
   event: ScheduleEvent
@@ -58,12 +59,16 @@ export function EventRow({ event, now, showVenue, showDescription, onSelect, sha
 
   const className = `event-row${cancelled ? ' is-cancelled' : ''}${shareable ? ' has-share' : ''}`
   const state = eventState(event, now)
+  // Marks the headline stages wherever a row appears, including the Live and Up next lists. It
+  // is a separate attribute from state and tone because those own the left border, and "on
+  // now" is more urgent than "this is the main stage".
+  const stage = isStageEvent(event) || undefined
   const row = onSelect ? (
-    <button type="button" className={className} data-state={state} data-tone={badge?.tone} onClick={onSelect}>
+    <button type="button" className={className} data-state={state} data-tone={badge?.tone} data-stage={stage} onClick={onSelect}>
       {content}
     </button>
   ) : (
-    <div className={className} data-state={state} data-tone={badge?.tone}>
+    <div className={className} data-state={state} data-tone={badge?.tone} data-stage={stage}>
       {content}
     </div>
   )

@@ -121,6 +121,12 @@ export interface FestVenue {
   /** Generated id of the place it is held at. */
   at: string
   content?: PlaceContent
+  /**
+   * A main-stage venue: its programme is the headline running order, so it gets its own tab in
+   * the event sheet and an accent on its rows. Two of them, because the afternoon informals and
+   * the night proshow are one evening to an attendee even though they are two places.
+   */
+  stage?: true
 }
 
 export const festVenues: FestVenue[] = [
@@ -129,11 +135,13 @@ export const festVenues: FestVenue[] = [
     name: 'Proshow',
     at: 'nit_football_ground',
     content: { description: 'Held on the NITC Football Ground.' },
+    stage: true,
   },
   {
     id: 'informals_stage',
     name: 'Informals Stage',
     at: 'atm_circle',
     content: { description: 'The Informals stage, in the ATM circle.' },
+    stage: true,
   },
 ]
