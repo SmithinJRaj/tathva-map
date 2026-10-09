@@ -57,6 +57,11 @@ export const VENUE_ALIASES: Record<string, string> = {
   'architecture department': 'department_of_architecture_and_plannning',
   'architecture dept': 'department_of_architecture_and_plannning',
   'architechture dept': 'department_of_architecture_and_plannning',
+  // Fourth and fifth spellings, from the Adizya schedule images.
+  dap: 'department_of_architecture_and_plannning',
+  'dap nitc': 'department_of_architecture_and_plannning',
+  // OSM carries this one itself, as name:en.
+  msed: 'material_science_engineering_department',
   // Which of the three halls is unknown, and they share one entrance, so the building is the
   // honest answer rather than a guess at a room.
   amphi: 'green_amphitheatre',

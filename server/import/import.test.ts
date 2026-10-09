@@ -346,3 +346,11 @@ test('reads the real sheet shape: title row, section headings, one Time column',
   expect(errors).toHaveLength(1)
   expect(errors[0].message).toMatch(/No usable time.*Add it in \/admin/)
 })
+
+test('the architecture department answers to all five of its spellings', () => {
+  const dap = 'department_of_architecture_and_plannning'
+  for (const spelling of ['Architecture department', 'Architechture dept', 'ARCHI DEPT', 'DAP', 'DAP NITC']) {
+    expect(match(spelling)?.placeId).toBe(dap)
+  }
+  expect(match('DAP NITC FACULTY COURTYARD')).toEqual({ placeId: dap, room: 'FACULTY COURTYARD' })
+})
