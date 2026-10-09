@@ -113,11 +113,14 @@ function CoverCampusBounds() {
   return null
 }
 
-/** Min zoom = the zoom at which the whole image just fits the container; recomputed on resize. */
+/**
+ * Min zoom = the zoom at which the image just covers the container (no letterboxing, which
+ * matters in the portrait frame); recomputed on resize. In the landscape frame the shapes match.
+ */
 function FitMinZoom() {
   const map = useMap()
   useEffect(() => {
-    const update = () => map.setMinZoom(map.getBoundsZoom(MAP_BOUNDS))
+    const update = () => map.setMinZoom(map.getBoundsZoom(MAP_BOUNDS, true))
     update()
     map.on('resize', update)
     return () => {
