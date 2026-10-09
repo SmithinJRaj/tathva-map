@@ -437,6 +437,53 @@
 .pin-other { background: var(--cat-other); }
 
 /* Start and goal: a labelled flag on a stem, so the label never covers the point itself. */
+/* A main stage's name, drawn on the map. The only labelled pin: every other place is already
+   lettered on the art, and these two are not — they are a fest stage on a junction and on a
+   ground, so without this they read as the junction and the ground. */
+.pin-stage {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 5px;
+  border: 2px solid var(--void);
+  background: var(--magenta);
+  color: var(--void);
+  box-shadow: var(--drop-sm);
+  font-family: var(--pixel);
+  font-size: 8px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Stem down to the point it names, mirroring the route endpoints. */
+.pin-stage::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 3px;
+  width: 3px;
+  height: 10px;
+  background: var(--void);
+}
+
+.place-live .pin-stage {
+  animation: stage-pulse 1.6s steps(2, end) infinite;
+}
+
+@keyframes stage-pulse {
+  50% {
+    box-shadow: var(--drop-sm), 0 0 12px var(--magenta);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .place-live .pin-stage {
+    animation: none;
+    box-shadow: var(--drop-sm), 0 0 12px var(--magenta);
+  }
+}
+
 .pin-flag {
   position: relative;
   display: inline-flex;

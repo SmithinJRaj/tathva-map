@@ -41,6 +41,36 @@ export function liveDotIcon(): L.DivIcon {
   return icon
 }
 
+/**
+ * A named flag for a main stage. Labelled, unlike every other pin, because the whole complaint
+ * this answers is that you could not find the Informals Stage by looking at the map: the stages
+ * share a point with something else (a road junction, a ground) and an unlabelled square there
+ * reads as whatever that something is.
+ *
+ * Anchored above the point and offset right, so it sits clear of the host's own pin rather than
+ * covering it, and both stay clickable.
+ */
+export function stageIcon(name: string, live = false): L.DivIcon {
+  const key = `stage:${name}:${live}`
+  let icon = cache.get(key)
+  if (!icon) {
+    icon = L.divIcon({
+      className: live ? 'place-live' : '',
+      html: `<span class="pin-stage">${escapeHtml(name)}</span>`,
+      iconSize: [0, 0],
+      iconAnchor: [-8, 20],
+      popupAnchor: [8, -16],
+    })
+    cache.set(key, icon)
+  }
+  return icon
+}
+
+/** Venue names come from fest data, not user input, but this is HTML going into a divIcon. */
+function escapeHtml(text: string): string {
+  return text.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`)
+}
+
 /** The labelled flag for the two ends of a route. */
 export function endpointIcon(kind: 'start' | 'goal'): L.DivIcon {
   const key = `end:${kind}`
