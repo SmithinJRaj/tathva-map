@@ -153,6 +153,15 @@ export interface FestVenue {
    * held them. Matched on the start of the title, so numbered sessions and shifts come along.
    */
   titles?: readonly string[]
+  /**
+   * When this venue stops existing, as an ISO instant with its offset. Past it, the pin leaves
+   * the map and the name leaves the From/To pickers on their own, without anyone deploying.
+   *
+   * For a thing that is only there for part of the fest. A hackathon's pin still saying
+   * "Tathack" the next morning is worse than no pin: it is an invitation to walk somewhere for
+   * something that finished.
+   */
+  until?: string
 }
 
 export const festVenues: FestVenue[] = [
@@ -198,5 +207,7 @@ export const festVenues: FestVenue[] = [
     content: { description: 'The hackathon, in the IT Lab Complex. Runs overnight.' },
     flagship: true,
     titles: ['Tathack'],
+    // Packing-up time on day 2, after which there is nothing to walk to.
+    until: '2026-10-10T18:00:00+05:30',
   },
 ]

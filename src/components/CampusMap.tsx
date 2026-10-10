@@ -13,7 +13,7 @@ import {
 } from '../config/mapConfig'
 import {
   effectiveCategory,
-  flagshipPlaces,
+  liveFlagshipPlaces,
   markerPlaceId,
   placesById,
   placesWithoutOutline,
@@ -26,6 +26,7 @@ import type { Fix } from '../hooks/useGeolocation'
 import { liveDotPlaces } from '../schedule/liveDots'
 import { useScheduleData } from '../schedule/ScheduleContext'
 import { getPlaceLayer, registerPlaceLayer } from './layerRegistry'
+import { EmblemLayer } from './EmblemLayer'
 import { LocationLayer } from './LocationLayer'
 import { endpointIcon, flagshipIcon, liveDotIcon, placeIcon } from './markers'
 import { PlaceLayer } from './PlaceLayer'
@@ -228,7 +229,7 @@ export function CampusMap({
   onZoomControls,
 }: Props) {
   const [tracing, setTracing] = useState(false)
-  const { eventVenueIds, liveVenueIds } = useScheduleData()
+  const { eventVenueIds, liveVenueIds, now } = useScheduleData()
 
   return (
     <MapContainer
@@ -254,6 +255,8 @@ export function CampusMap({
           className={MAP_IMAGE_PIXELATED ? 'pixel-art' : undefined}
         />
       </Pane>
+      <EmblemLayer />
+
       <PlaceLayer interactive={!tracing} hidden={hidden} onRouteTo={onRouteTo} />
 
       {/* A polygon already shows where a place is, so only pin the ones mapped as a point. */}
@@ -262,7 +265,7 @@ export function CampusMap({
           instead, which is exactly how the Informals Stage became unfindable. The events are
           known by their own name, not the building's: nobody is looking for the IT Lab Complex.
           Always shown; hiding these is not a thing anyone wants from the legend. */}
-      {flagshipPlaces.map((place) => (
+      {liveFlagshipPlaces(now).map((place) => (
         <Marker
           key={place.id}
           ref={(marker) => registerPlaceLayer(place.id, marker)}

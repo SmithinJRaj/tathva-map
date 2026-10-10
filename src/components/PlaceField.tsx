@@ -1,7 +1,8 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
-import { routablePlaces, type Place, type PlaceCategory } from '../data/campus'
+import { routablePlaces, venueIsOver, type Place, type PlaceCategory } from '../data/campus'
 import { MY_LOCATION } from '../hooks/useRouting'
 import { searchPlaces } from '../lib/placeSearch'
+import { useScheduleData } from '../schedule/ScheduleContext'
 
 /** The live-position entry, shaped like a place so it can sit in the same list. */
 const MY_LOCATION_OPTION = {
@@ -40,10 +41,17 @@ export function PlaceField({ label, value, onChange, allowMyLocation = false }: 
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
 
-  const options: Option[] = useMemo(
-    () => (allowMyLocation ? [MY_LOCATION_OPTION, ...routablePlaces] : routablePlaces),
-    [allowMyLocation],
-  )
+  // `now` only changes on the schedule clock's own tick, so this list is rebuilt then and not
+  // on every render. Keyed on it directly rather than on a rounded minute: rounding saved
+  // nothing measurable and let the picker disagree with the map for up to a minute.
+  const { now } = useScheduleData()
+  const options: Option[] = useMemo(() => {
+    // A venue whose time is up goes from here too. Offering "Tathack" as a destination the
+    // morning after it finished is the same lie as leaving its pin on the map, and worse for
+    // being the thing someone typed looking for it.
+    const current = routablePlaces.filter((place) => !venueIsOver(place, now))
+    return allowMyLocation ? [MY_LOCATION_OPTION, ...current] : current
+  }, [allowMyLocation, now])
 
   const selected = value ? options.find((o) => o.id === value) : undefined
   const matches = useMemo(
