@@ -27,11 +27,13 @@ export interface Place {
    * the thing they sit on already is.
    */
   anchoredTo?: string
-  /**
-   * A main-stage fest venue. Anchored like any other, but pinned and labelled in its own right:
-   * the whole point of it is to be found.
-   */
+  /** Part of the main-stage running order. */
   stage?: true
+  /**
+   * Something people come looking for by name. Anchored like any other fest venue, but pinned
+   * and labelled in its own right: the whole point of it is to be found.
+   */
+  flagship?: true
   /** Extra words that should find this place when searching; never displayed. */
   aliases?: readonly string[]
   description?: string
@@ -115,6 +117,7 @@ const fest: Place[] = festVenues.flatMap((venue) => {
       floor: 0,
       anchoredTo: host.id,
       ...(venue.stage ? { stage: true as const } : {}),
+      ...(venue.flagship ? { flagship: true as const } : {}),
       ...withContent(venue.content),
     },
   ]
@@ -149,11 +152,14 @@ export function effectiveCategory(place: Place, eventVenueIds: ReadonlySet<strin
   return eventVenueIds.has(place.id) ? 'event' : place.category
 }
 
-/** The stage venues, pinned and labelled on the map in their own right. */
+/** Part of the main-stage running order, for the Stage tab. */
 export const stagePlaces: Place[] = fest.filter((p) => p.stage)
 
+/** Labelled by name on the map: the stages and the flagship events. */
+export const flagshipPlaces: Place[] = fest.filter((p) => p.flagship)
+
 const hostOf = new Map(places.flatMap((p) => (p.anchoredTo ? [[p.id, p.anchoredTo] as const] : [])))
-const hasOwnMarker = new Set(stagePlaces.map((p) => p.id))
+const hasOwnMarker = new Set(flagshipPlaces.map((p) => p.id))
 
 /** The shape a place is drawn as: its host if it is anchored to one, or the place itself. */
 export function hostPlaceId(placeId: string): string {

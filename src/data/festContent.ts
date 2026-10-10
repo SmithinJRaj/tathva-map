@@ -33,7 +33,7 @@ export const festContent: Record<string, PlaceContent> = {
   east_campus_lecture_hall_complex_eclhc: {
     description:
       'Workshops run upstairs, on the floor above the lecture halls — 9am to 12pm and 2pm to 5pm, all three days.',
-    aliases: ['workshops', 'workshop', 'eclc'],
+    aliases: ['eclc'],
   },
   main_building: {
     description: 'Administrative heart of the institute. Registration and help desk.',
@@ -136,10 +136,23 @@ export interface FestVenue {
   content?: PlaceContent
   /**
    * A main-stage venue: its programme is the headline running order, so it gets its own tab in
-   * the event sheet and an accent on its rows. Two of them, because the afternoon informals and
-   * the night proshow are one evening to an attendee even though they are two places.
+   * the event sheet. Two of them, because the afternoon informals and the night proshow are one
+   * evening to an attendee even though they are two places.
    */
   stage?: true
+  /**
+   * Something people come looking for by name. It gets a labelled pin on the map and an accent
+   * on its rows, and it is searchable in From/To. Every stage is one of these; so are the
+   * flagship events, which attendees know by their own name and not by the building.
+   */
+  flagship?: true
+  /**
+   * Event titles that belong to this venue, for a venue that names an **event** rather than a
+   * place. Robowars is held at the Open Air Theatre and stored as such, so without this the pin
+   * saying "Robowars" would open onto "No events scheduled here" while the theatre beside it
+   * held them. Matched on the start of the title, so numbered sessions and shifts come along.
+   */
+  titles?: readonly string[]
 }
 
 export const festVenues: FestVenue[] = [
@@ -149,6 +162,7 @@ export const festVenues: FestVenue[] = [
     at: 'nit_football_ground',
     content: { description: 'Held on the NITC Football Ground.' },
     stage: true,
+    flagship: true,
   },
   {
     id: 'informals_stage',
@@ -156,5 +170,33 @@ export const festVenues: FestVenue[] = [
     at: 'atm_circle',
     content: { description: 'The Informals stage, in the ATM circle.' },
     stage: true,
+    flagship: true,
+  },
+  {
+    id: 'workshops',
+    name: 'Workshops',
+    at: 'east_campus_lecture_hall_complex_eclhc',
+    content: {
+      description:
+        'Upstairs at ECLHC, on the floor above the lecture halls — 9am to 12pm and 2pm to 5pm, all three days.',
+    },
+    flagship: true,
+    titles: ['Workshops'],
+  },
+  {
+    id: 'robowars',
+    name: 'Robowars',
+    at: 'open_air_theatre',
+    content: { description: 'At the Open Air Theatre.' },
+    flagship: true,
+    titles: ['Robowars'],
+  },
+  {
+    id: 'tathack',
+    name: 'Tathack',
+    at: 'it_lab_complex',
+    content: { description: 'The hackathon, in the IT Lab Complex. Runs overnight.' },
+    flagship: true,
+    titles: ['Tathack'],
   },
 ]

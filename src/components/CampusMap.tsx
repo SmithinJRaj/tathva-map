@@ -13,10 +13,10 @@ import {
 } from '../config/mapConfig'
 import {
   effectiveCategory,
+  flagshipPlaces,
   markerPlaceId,
   placesById,
   placesWithoutOutline,
-  stagePlaces,
   type PlaceCategory,
 } from '../data/campus'
 import { useRouting } from '../hooks/useRouting'
@@ -27,7 +27,7 @@ import { liveDotPlaces } from '../schedule/liveDots'
 import { useScheduleData } from '../schedule/ScheduleContext'
 import { getPlaceLayer, registerPlaceLayer } from './layerRegistry'
 import { LocationLayer } from './LocationLayer'
-import { endpointIcon, liveDotIcon, placeIcon, stageIcon } from './markers'
+import { endpointIcon, flagshipIcon, liveDotIcon, placeIcon } from './markers'
 import { PlaceLayer } from './PlaceLayer'
 import { popupMaxHeight } from './popupSize'
 import { PLANNER_CLEARANCE_PX, SHEET_PEEK_PX } from './sheetSnap'
@@ -257,16 +257,17 @@ export function CampusMap({
       <PlaceLayer interactive={!tracing} hidden={hidden} onRouteTo={onRouteTo} />
 
       {/* A polygon already shows where a place is, so only pin the ones mapped as a point. */}
-      {/* The main stages, labelled. They sit on a junction and a ground respectively, so an
-          unlabelled pin there reads as the junction or the ground — which is exactly how the
-          Informals Stage became unfindable. Always shown: hiding the stages is not a thing
-          anyone wants from the legend. */}
-      {stagePlaces.map((place) => (
+      {/* The flagship venues, labelled by name. Each sits on something already drawn — a
+          junction, a ground, a lecture block — so an unlabelled pin there reads as that thing
+          instead, which is exactly how the Informals Stage became unfindable. The events are
+          known by their own name, not the building's: nobody is looking for the IT Lab Complex.
+          Always shown; hiding these is not a thing anyone wants from the legend. */}
+      {flagshipPlaces.map((place) => (
         <Marker
           key={place.id}
           ref={(marker) => registerPlaceLayer(place.id, marker)}
           position={place.position}
-          icon={stageIcon(place.name, liveVenueIds.has(place.id))}
+          icon={flagshipIcon(place.name, liveVenueIds.has(place.id))}
           zIndexOffset={1000}
         >
           <Popup

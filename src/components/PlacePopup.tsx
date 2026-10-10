@@ -46,7 +46,10 @@ export function PlacePopup({ place, onRouteTo }: Props) {
       ) : (
         <section className="retro-section">
           <h3 className="retro-section-title">Events</h3>
-          <p className="retro-empty">No events scheduled here.</p>
+          {/* Not "no events here": a venue can hold a description saying exactly when its
+              workshops run and still have nothing in the schedule data, and the two lines
+              reading against each other makes the map look wrong when it is only incomplete. */}
+          <p className="retro-empty">Nothing listed right now.</p>
         </section>
       )}
 

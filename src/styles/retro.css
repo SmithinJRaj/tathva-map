@@ -457,7 +457,7 @@
 /* A main stage's name, drawn on the map. The only labelled pin: every other place is already
    lettered on the art, and these two are not — they are a fest stage on a junction and on a
    ground, so without this they read as the junction and the ground. */
-.pin-stage {
+.pin-flagship {
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -474,7 +474,7 @@
 }
 
 /* Stem down to the point it names, mirroring the route endpoints. */
-.pin-stage::after {
+.pin-flagship::after {
   content: '';
   position: absolute;
   top: 100%;
@@ -484,18 +484,18 @@
   background: var(--void);
 }
 
-.place-live .pin-stage {
-  animation: stage-pulse 1.6s steps(2, end) infinite;
+.place-live .pin-flagship {
+  animation: flagship-pulse 1.6s steps(2, end) infinite;
 }
 
-@keyframes stage-pulse {
+@keyframes flagship-pulse {
   50% {
     box-shadow: var(--drop-sm), 0 0 12px var(--magenta);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .place-live .pin-stage {
+  .place-live .pin-flagship {
     animation: none;
     box-shadow: var(--drop-sm), 0 0 12px var(--magenta);
   }
