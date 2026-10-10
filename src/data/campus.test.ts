@@ -1,6 +1,15 @@
 import { expect, test } from 'vitest'
 import { searchPlaces } from '../lib/placeSearch'
-import { flagshipPlaces, hostPlaceId, markerPlaceId, places, placesById, routablePlaces } from './campus'
+import {
+  flagshipPlaces,
+  hostPlaceId,
+  liveFlagshipPlaces,
+  markerPlaceId,
+  places,
+  placesById,
+  routablePlaces,
+  venueIsOver,
+} from './campus'
 
 const ECLHC = 'east_campus_lecture_hall_complex_eclhc'
 
@@ -52,4 +61,28 @@ test('ELHC no longer claims the workshops', () => {
 test("fest aliases are added to the map data's own, not substituted for them", () => {
   expect(placesById.get(ECLHC)?.aliases).toContain('eclc')
   expect(places.filter((p) => (p.aliases?.length ?? 0) > 0).length).toBeGreaterThan(1)
+})
+
+test('a venue with no end date never expires', () => {
+  const proshow = placesById.get('proshow')!
+  expect(proshow.until).toBeUndefined()
+  expect(venueIsOver(proshow, new Date('2030-01-01T00:00:00Z'))).toBe(false)
+})
+
+test("Tathack's pin lets itself out at 6pm on day 2", () => {
+  const tathack = placesById.get('tathack')!
+  expect(tathack.until).toBe('2026-10-10T18:00:00+05:30')
+  // 17:59 IST, then 18:01 IST. The clock ticks every 30 s, so it goes on its own.
+  expect(venueIsOver(tathack, new Date('2026-10-10T12:29:00.000Z'))).toBe(false)
+  expect(venueIsOver(tathack, new Date('2026-10-10T12:31:00.000Z'))).toBe(true)
+})
+
+test('an expired venue leaves the map and the pickers together', () => {
+  const before = new Date('2026-10-10T12:29:00.000Z')
+  const after = new Date('2026-10-10T12:31:00.000Z')
+  expect(liveFlagshipPlaces(before).map((p) => p.id)).toContain('tathack')
+  expect(liveFlagshipPlaces(after).map((p) => p.id)).not.toContain('tathack')
+  // The same predicate the From/To list filters on, so the two can never disagree.
+  expect(routablePlaces.filter((p) => !venueIsOver(p, after)).map((p) => p.id)).not.toContain('tathack')
+  expect(liveFlagshipPlaces(after).length).toBe(flagshipPlaces.length - 1)
 })

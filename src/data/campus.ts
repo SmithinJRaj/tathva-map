@@ -34,6 +34,8 @@ export interface Place {
    * and labelled in its own right: the whole point of it is to be found.
    */
   flagship?: true
+  /** When this place stops existing, for a fest venue that is only there for part of it. */
+  until?: string
   /** Extra words that should find this place when searching; never displayed. */
   aliases?: readonly string[]
   description?: string
@@ -118,6 +120,7 @@ const fest: Place[] = festVenues.flatMap((venue) => {
       anchoredTo: host.id,
       ...(venue.stage ? { stage: true as const } : {}),
       ...(venue.flagship ? { flagship: true as const } : {}),
+      ...(venue.until ? { until: venue.until } : {}),
       ...withContent(venue.content),
     },
   ]
@@ -157,6 +160,20 @@ export const stagePlaces: Place[] = fest.filter((p) => p.stage)
 
 /** Labelled by name on the map: the stages and the flagship events. */
 export const flagshipPlaces: Place[] = fest.filter((p) => p.flagship)
+
+/**
+ * Whether a venue's time is up. Checked against the ticking clock at the places it is shown
+ * rather than filtered out of `places`, which is built once at load: a page left open across
+ * the moment should drop the venue by itself, and one opened the next day should never show it.
+ */
+export function venueIsOver(place: Place, now: Date): boolean {
+  return place.until !== undefined && now.getTime() >= Date.parse(place.until)
+}
+
+/** The flagship venues still worth walking to. */
+export function liveFlagshipPlaces(now: Date): Place[] {
+  return flagshipPlaces.filter((place) => !venueIsOver(place, now))
+}
 
 const hostOf = new Map(places.flatMap((p) => (p.anchoredTo ? [[p.id, p.anchoredTo] as const] : [])))
 const hasOwnMarker = new Set(flagshipPlaces.map((p) => p.id))
