@@ -45,6 +45,15 @@ const withContent = (content: PlaceContent | undefined) => ({
   amenities: content?.amenities ?? [],
 })
 
+/** Map-data aliases and fest-content aliases both count; neither should shadow the other. */
+const mergedAliases = (
+  fromMap: readonly string[] | undefined,
+  fromContent: readonly string[] | undefined,
+): readonly string[] | undefined => {
+  const all = [...(fromMap ?? []), ...(fromContent ?? [])]
+  return all.length > 0 ? [...new Set(all)] : undefined
+}
+
 const outdoor: Place[] = generated.places.map((p) => ({
   id: p.id,
   name: p.name,
@@ -54,8 +63,12 @@ const outdoor: Place[] = generated.places.map((p) => ({
   nodeId: p.nodeId,
   driveNodeId: p.driveNodeId,
   floor: 0,
-  ...('aliases' in p ? { aliases: p.aliases as readonly string[] } : {}),
   ...withContent(festContent[p.id]),
+  // After withContent, which does not know about the generated ones.
+  aliases: mergedAliases(
+    'aliases' in p ? (p.aliases as readonly string[]) : undefined,
+    festContent[p.id]?.aliases,
+  ),
 }))
 
 const byId = new Map(outdoor.map((p) => [p.id, p]))
