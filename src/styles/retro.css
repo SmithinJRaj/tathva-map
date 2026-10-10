@@ -454,6 +454,33 @@
 .pin-other { background: var(--cat-other); }
 
 /* Start and goal: a labelled flag on a stem, so the label never covers the point itself. */
+/* A logo laid over its building. The asset is a plain white mark, so everything that makes it
+   look like it belongs — the violet cast, the glow, the slow breath — lives here and can be
+   changed without rebuilding the image. Held well under full opacity: it sits on top of the
+   building's own label and lines, and should read as painted on rather than stuck over. */
+.place-emblem {
+  opacity: 0.66;
+  filter: drop-shadow(0 0 6px rgb(232 121 249 / 0.55)) drop-shadow(0 0 18px rgb(167 139 250 / 0.3));
+  animation: emblem-breathe 7s ease-in-out infinite;
+  /* Pixel art everywhere else on this map; a soft mark among hard edges looks like a mistake. */
+  image-rendering: pixelated;
+}
+
+@keyframes emblem-breathe {
+  50% {
+    opacity: 0.92;
+    filter: drop-shadow(0 0 10px rgb(232 121 249 / 0.8)) drop-shadow(0 0 26px rgb(167 139 250 / 0.45));
+  }
+}
+
+/* The glow is the point; the pulsing is not. Keep the look, drop the movement. */
+@media (prefers-reduced-motion: reduce) {
+  .place-emblem {
+    animation: none;
+    opacity: 0.8;
+  }
+}
+
 /* A main stage's name, drawn on the map. The only labelled pin: every other place is already
    lettered on the art, and these two are not — they are a fest stage on a junction and on a
    ground, so without this they read as the junction and the ground. */

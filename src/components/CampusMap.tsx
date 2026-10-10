@@ -26,6 +26,7 @@ import type { Fix } from '../hooks/useGeolocation'
 import { liveDotPlaces } from '../schedule/liveDots'
 import { useScheduleData } from '../schedule/ScheduleContext'
 import { getPlaceLayer, registerPlaceLayer } from './layerRegistry'
+import { EmblemLayer } from './EmblemLayer'
 import { LocationLayer } from './LocationLayer'
 import { endpointIcon, flagshipIcon, liveDotIcon, placeIcon } from './markers'
 import { PlaceLayer } from './PlaceLayer'
@@ -254,6 +255,8 @@ export function CampusMap({
           className={MAP_IMAGE_PIXELATED ? 'pixel-art' : undefined}
         />
       </Pane>
+      <EmblemLayer />
+
       <PlaceLayer interactive={!tracing} hidden={hidden} onRouteTo={onRouteTo} />
 
       {/* A polygon already shows where a place is, so only pin the ones mapped as a point. */}
