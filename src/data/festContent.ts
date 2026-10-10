@@ -15,12 +15,25 @@ export interface PlaceContent {
   description?: string
   food?: PlaceFood[]
   amenities?: string[]
+  /**
+   * Extra words that should find this place, on top of any the map data already carries. For
+   * what a building is *used for* during the fest, which is how people look for it — nobody
+   * searching for a workshop knows it is held above the East Campus Lecture Hall Complex.
+   */
+  aliases?: readonly string[]
 }
 
 export const festContent: Record<string, PlaceContent> = {
   elhc: {
-    description: 'Electrical Lecture Hall Complex. Most Tathva workshops run here.',
+    // Not the workshops — those are above ECLHC, one letter away in the name and a different
+    // building. ELHC runs the room-numbered competitions, 101 to 303.
+    description: 'Electrical Lecture Hall Complex. Competitions run in the numbered rooms; check your room number.',
     amenities: ['Restrooms (ground floor)', 'Drinking water', 'Lift to floor 3'],
+  },
+  east_campus_lecture_hall_complex_eclhc: {
+    description:
+      'Workshops run upstairs, on the floor above the lecture halls — 9am to 12pm and 2pm to 5pm, all three days.',
+    aliases: ['workshops', 'workshop', 'eclc'],
   },
   main_building: {
     description: 'Administrative heart of the institute. Registration and help desk.',

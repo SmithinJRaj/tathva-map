@@ -364,3 +364,45 @@ test('the architecture department answers to all five of its spellings', () => {
   }
   expect(match('DAP NITC FACULTY COURTYARD')).toEqual({ placeId: dap, room: 'FACULTY COURTYARD' })
 })
+
+const sessionCsv = (time: string) =>
+  `Event,Time,venue\nWorkshops,${time},ECLC\n`
+
+test('a row holding two sessions becomes two numbered events, not one error', () => {
+  // This row ran on all three days and was on no map at all: refusing it lost the event, and
+  // the two sessions share a title and a day, which is how a row is matched to a stored event.
+  const { ok, errors } = parseScheduleCsv(sessionCsv('9am to 12pm and 2pm to 5pm'), {
+    defaultDate: '2026-10-09',
+  })
+  expect(errors).toEqual([])
+  expect(ok.map((o) => o.input.title)).toEqual(['Workshops (Session 1)', 'Workshops (Session 2)'])
+  expect(ok.map((o) => [o.input.startAt, o.input.endAt])).toEqual([
+    ['2026-10-09T03:30:00.000Z', '2026-10-09T06:30:00.000Z'],
+    ['2026-10-09T08:30:00.000Z', '2026-10-09T11:30:00.000Z'],
+  ])
+  expect(new Set(ok.map((o) => o.input.placeId))).toEqual(new Set(['east_campus_lecture_hall_complex_eclhc']))
+})
+
+test('one session is still just the event, with no number stuck on it', () => {
+  const { ok } = parseScheduleCsv(sessionCsv('9am to 12pm'), { defaultDate: '2026-10-09' })
+  expect(ok.map((o) => o.input.title)).toEqual(['Workshops'])
+})
+
+test('a bad half fails on its own and names itself; the good half still imports', () => {
+  // The real row: "11PM to 12:30PM" is an eleven-AM lecture written wrong, and guessing that
+  // is a twelve-hour guess. The afternoon session is unambiguous and should not be lost with it.
+  const { ok, errors } = parseScheduleCsv(
+    `Event,Time,venue\nLecture,11PM to 12:30PM and 3PM to 5:30PM,ABC HALL\n`,
+    { defaultDate: '2026-10-09' },
+  )
+  expect(ok.map((o) => o.input.title)).toEqual(['Lecture (Session 2)'])
+  expect(errors).toHaveLength(1)
+  expect(errors[0].message).toContain('(Session 1)')
+})
+
+test('re-importing a split row matches what it made last time', () => {
+  // Titles are the identity, so the numbering has to be stable or every sync would duplicate.
+  const once = parseScheduleCsv(sessionCsv('9am to 12pm and 2pm to 5pm'), { defaultDate: '2026-10-09' })
+  const twice = parseScheduleCsv(sessionCsv('9am to 12pm and 2pm to 5pm'), { defaultDate: '2026-10-09' })
+  expect(once.ok.map((o) => o.input)).toEqual(twice.ok.map((o) => o.input))
+})

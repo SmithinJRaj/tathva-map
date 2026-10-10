@@ -114,31 +114,31 @@ export function parseScheduleCsv(text: string, options: ParseOptions = {}): Pars
     // One row becomes one event per date: its own, the file's, or every fest day.
     const dates = options.everyDay?.length ? options.everyDay : [cell('date') || options.defaultDate || '']
 
-    let times: [string, string]
+    /** A row with "9am to 12pm and 2pm to 5pm" in it is two events, not one. */
+    let sessions: { times: [string, string]; suffix: string }[]
     if (cell('start') || cell('end')) {
-      times = [cell('start'), cell('end')]
+      const times: [string, string] = [cell('start'), cell('end')]
       const badTime = times.find((t) => !TIME.test(t))
       if (badTime !== undefined) {
         fail(`Bad time "${badTime}"`)
         continue
       }
+      sessions = [{ times, suffix: '' }]
     } else {
       const parsed = parseTimeRange(cell('time'))
       if (parsed.kind === 'unparsed') {
         fail(`No usable time: ${parsed.reason}. Add it in /admin.`)
         continue
       }
-      if (parsed.ranges.length > 1) {
-        // Two sessions share a title and a day, which is how events are identified here, so
-        // the second would overwrite the first on the next import rather than sit beside it.
-        fail(
-          `Two sessions in one row (${parsed.ranges
-            .map((r) => `${r.start}-${r.end}`)
-            .join(', ')}). Split them into two rows with distinct titles, or add the second in /admin.`,
-        )
-        continue
-      }
-      times = [parsed.ranges[0].start, parsed.ranges[0].end]
+      // Numbered, because a row is matched to a stored event by title and day: two sessions
+      // sharing both would mean the afternoon overwrote the morning on every import. Numbering
+      // follows what the sheet already writes by hand elsewhere ("Rhino+CNC (Session 1)").
+      // This used to be refused outright, which lost the event entirely — the workshops above
+      // ECLHC ran all three days and were on no map at all.
+      sessions = parsed.ranges.map((range, i) => ({
+        times: [range.start, range.end],
+        suffix: parsed.ranges.length > 1 ? ` (Session ${i + 1})` : '',
+      }))
     }
     const badDate = dates.find((d) => !DATE.test(d))
     if (badDate !== undefined) {
@@ -147,8 +147,9 @@ export function parseScheduleCsv(text: string, options: ParseOptions = {}): Pars
     }
 
     for (const date of dates) {
+      for (const { times, suffix } of sessions) {
       const parsed = eventInputSchema.safeParse({
-        title: cell('title'),
+        title: cell('title') + suffix,
         description: cell('description') || null,
         category: cell('category').toLowerCase() || 'other',
         placeId: venue.placeId,
@@ -158,7 +159,9 @@ export function parseScheduleCsv(text: string, options: ParseOptions = {}): Pars
         note: cell('note') || null,
       })
       if (!parsed.success) {
-        fail(Object.values(fieldErrors(parsed.error)).join('; '))
+        // Name the session: a row split into two can fail on one half and import the other,
+        // and "End must be after start" three times over says nothing about which half.
+        fail(`${suffix ? `${suffix.trim()} ` : ''}${Object.values(fieldErrors(parsed.error)).join('; ')}`)
         continue
       }
       // Rows are matched to stored events by title + IST day, so a repeat would overwrite the first.
@@ -170,6 +173,7 @@ export function parseScheduleCsv(text: string, options: ParseOptions = {}): Pars
       }
       seen.set(key, line)
       result.ok.push({ line, input: parsed.data })
+      }
     }
   }
   return result
