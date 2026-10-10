@@ -15,6 +15,12 @@ export interface Emblem {
   aspect: number
   /** How much of the building's footprint the mark spans, at its widest. */
   fill: number
+  /**
+   * Where in the footprint's bounding box the mark's centre sits, as `[x, y]` fractions —
+   * `[0.5, 0.5]`, the default, is the middle. Use it to keep the mark off the name the map art
+   * already prints across the building. Clamped so the mark cannot leave the box.
+   */
+  anchor?: [number, number]
   label: string
 }
 
@@ -22,7 +28,12 @@ export const emblems: Record<string, Emblem> = {
   department_of_architecture_and_plannning: {
     src: dapEmblem,
     aspect: 0.9277,
-    fill: 0.70,
+    // The art prints "Dept. of Architecture & Planning" across the middle of this footprint, so
+    // the mark goes in the clear lower wing instead of over the lettering. Small, because that
+    // wing is what is left: the largest square-ish rectangle that fits inside those walls below
+    // the text, with a few pixels of margin, is about a third of the footprint's width.
+    fill: 0.34,
+    anchor: [0.56, 0.76],
     label: 'Department of Architecture & Planning',
   },
 }

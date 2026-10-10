@@ -11,8 +11,12 @@ import type { Emblem } from '../data/emblems'
  *
  * Fitted to the footprint's bounding box rather than the footprint itself, because a building
  * traced as an L still wants its logo in the middle of the box, and shrunk by `fill` so the
- * mark sits inside the walls — and, at this size, so the building's printed name still reads
- * through it.
+ * mark sits inside the walls.
+ *
+ * Centred in the box unless the emblem names an `anchor`, which the art's own lettering makes
+ * necessary: a building with its name printed across the middle has no room there, so the mark
+ * is placed in the clear part of the roof instead and the name is left to read on its own. The
+ * anchor is clamped to the box, so a mark can be pushed to an edge but never off the building.
  *
  * Web Mercator stretches latitude, so the drawn rectangle comes out about 1% taller than the
  * file at this latitude. That is invisible, and correcting it would mean projecting at a zoom
@@ -30,10 +34,13 @@ export function emblemBounds(polygon: L.LatLngTuple[], emblem: Emblem): L.LatLng
   // The widest rectangle of the file's own shape that fits the box: never stretched to fill it.
   const width = Math.min(right - left, (bottom - top) * emblem.aspect) * emblem.fill
   const height = width / emblem.aspect
-  const cx = (left + right) / 2
-  const cy = (top + bottom) / 2
+  const [ax, ay] = emblem.anchor ?? [0.5, 0.5]
+  const cx = clamp(left + ax * (right - left), left + width / 2, right - width / 2)
+  const cy = clamp(top + ay * (bottom - top), top + height / 2, bottom - height / 2)
   return [
     imagePoint(cx - width / 2, cy - height / 2),
     imagePoint(cx + width / 2, cy + height / 2),
   ]
 }
+
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)

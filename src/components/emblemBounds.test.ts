@@ -27,6 +27,22 @@ test('the mark is centred on the footprint', () => {
   expect((r.y0 + r.y1) / 2).toBeCloseTo(1200, 4)
 })
 
+test('an anchor moves the mark within the box without resizing it', () => {
+  const centred = inPixels(emblemBounds(square, emblem))
+  const low = inPixels(emblemBounds(square, { ...emblem, anchor: [0.5, 0.75] }))
+  expect(low.width).toBeCloseTo(centred.width, 4)
+  expect((low.x0 + low.x1) / 2).toBeCloseTo(1200, 4)
+  expect((low.y0 + low.y1) / 2).toBeCloseTo(1300, 4)
+})
+
+test('an anchor at the edge pushes the mark against it, never past it', () => {
+  const r = inPixels(emblemBounds(square, { ...emblem, anchor: [1, 1] }))
+  expect(r.x1).toBeCloseTo(1400, 4)
+  expect(r.y1).toBeCloseTo(1400, 4)
+  expect(r.x0).toBeGreaterThanOrEqual(1000)
+  expect(r.y0).toBeGreaterThanOrEqual(1000)
+})
+
 test("the rectangle keeps the file's shape rather than filling the box", () => {
   const r = inPixels(emblemBounds(square, emblem))
   expect(r.width / r.height).toBeCloseTo(emblem.aspect, 3)
@@ -68,6 +84,18 @@ test('every emblem names a place that exists and has an outline to sit on', () =
     expect(e.fill).toBeGreaterThan(0)
     expect(e.fill).toBeLessThanOrEqual(1)
   }
+})
+
+/**
+ * The map art prints the department's name across the middle of its footprint, and the commit
+ * that moved the mark down did so to stop it covering those three lines. The lettering ends at
+ * about y=685 in the art's pixels; the mark has to start below that.
+ */
+test('the architecture mark clears the name printed on the building', () => {
+  const emblem = emblems.department_of_architecture_and_plannning
+  const polygon = placesById.get('department_of_architecture_and_plannning')!.polygon!
+  const r = inPixels(emblemBounds(polygon, emblem))
+  expect(r.y0).toBeGreaterThan(685)
 })
 
 test('the mark stays inside the building it is drawn on', () => {
